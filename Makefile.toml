@@ -27,7 +27,7 @@ args = ["clippy", "--all-targets", "--all-features", "--", "-Dwarnings"]
 command = "cargo"
 args = ["test"]
 
-[tasks.all]
+[tasks.pre-commit]
 dependencies = [
     "check",
     "build",
@@ -36,3 +36,6 @@ dependencies = [
     "doc",
     "tests",
 ]
+
+[tasks.all]
+dependencies = ["pre-commit"]
