@@ -1,0 +1,38 @@
+[env]
+CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true
+
+[tasks.build]
+command = "cargo"
+args = ["build"]
+
+[tasks.check]
+command = "cargo"
+args = ["check"]
+
+[tasks.fmt]
+command = "cargo"
+args = ["fmt", "--check"]
+
+[tasks.doc]
+toolchain = "nightly"
+env = { "RUSTDOCFLAGS" = "-D warnings --cfg docsrs" }
+command = "cargo"
+args = ["doc", "--no-deps", "--all-features"]
+
+[tasks.clippy]
+command = "cargo"
+args = ["clippy", "--all-targets", "--all-features", "--", "-Dwarnings"]
+
+[tasks.tests]
+command = "cargo"
+args = ["test"]
+
+[tasks.all]
+dependencies = [
+    "check",
+    "build",
+    "fmt",
+    "clippy",
+    "doc",
+    "tests",
+]
