@@ -1,0 +1,15 @@
+[package]
+name = "memcrab-cli"
+version = "0.1.0"
+edition = "2021"
+
+description = """
+Command line interface for Memcrab.
+"""
+license = "MIT OR Apache-2.0"
+readme = "../README.md"
+repository = "https://github.com/cospectrum/memcrab"
+
+[dependencies]
+clap = { version = "4.4.12", features = ["derive"] }
+rustyline = "13.0.0"

@@ -199,3 +199,4 @@ Cargo.lock
 
 # !src
 !memcrab
+!memcrab-cli
