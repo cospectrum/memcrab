@@ -19,45 +19,19 @@ struct Cli {
     server: bool,
 }
 
-// async fn eval_line(client: &mut CacheRpcClient, line: String) -> anyhow::Result<()> {
-//     Ok(())
-// }
-
 // struct REPLSyntaxError;
 
 async fn eval_lines(addr: String) -> anyhow::Result<()> {
     let mut client = CacheRpcClient::connect(addr).await.unwrap();
     let mut readline = DefaultEditor::new()?;
     loop {
-        let readline = readline.readline("memcrab> ");
-        match readline {
+        let rl = readline.readline("memcrab> ");
+        match rl {
             Ok(line) => {
-                let tokens = line.split_whitespace().collect::<Vec<_>>();
-                if tokens[0] == "get" {
-                    let msg = GetRequest {
-                        key: tokens[1].to_owned(),
-                    };
-                    let req = tonic::Request::new(msg);
-                    let resp = client.get(req).await?.into_inner();
-                    match resp.value {
-                        Some(val) => println!("value: {:?}", val),
-                        None => println!("no value set"),
-                    }
-                } else if tokens[0] == "set" {
-                    let msg = SetRequest {
-                        key: tokens[1].to_owned(),
-                        value: tokens[2..]
-                            .iter()
-                            .map(|&s| s.parse().unwrap())
-                            .collect::<Vec<u8>>(),
-                    };
-                    let req = tonic::Request::new(msg);
-                    client.set(req).await?;
-                }
+                eval_line(&mut client, line).await?;
             }
             Err(ReadlineError::Interrupted) => {
                 println!("Ctrl-C");
-                continue;
             }
             Err(ReadlineError::Eof) => {
                 println!("Quit");
@@ -70,6 +44,35 @@ async fn eval_lines(addr: String) -> anyhow::Result<()> {
         }
     }
 
+    Ok(())
+}
+
+async fn eval_line(
+    client: &mut CacheRpcClient<tonic::transport::Channel>,
+    line: String,
+) -> anyhow::Result<()> {
+    let tokens = line.split_whitespace().collect::<Vec<_>>();
+    if tokens[0] == "get" {
+        let msg = GetRequest {
+            key: tokens[1].to_owned(),
+        };
+        let req = tonic::Request::new(msg);
+        let resp = client.get(req).await?.into_inner();
+        match resp.value {
+            Some(val) => println!("value: {:?}", val),
+            None => println!("no value set"),
+        }
+    } else if tokens[0] == "set" {
+        let msg = SetRequest {
+            key: tokens[1].to_owned(),
+            value: tokens[2..]
+                .iter()
+                .map(|&s| s.parse().unwrap())
+                .collect::<Vec<u8>>(),
+        };
+        let req = tonic::Request::new(msg);
+        client.set(req).await?;
+    }
     Ok(())
 }
 
