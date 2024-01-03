@@ -1,12 +1,8 @@
 syntax = "proto3";
+package cache_grpc;
 
-package rpc;
-
-service Getter {
+service CacheRPC {
     rpc Get(GetRequest) returns (GetResponse);
-}
-
-service Setter {
     rpc Set(SetRequest) returns (SetResponse);
 }
 
@@ -24,5 +20,4 @@ message SetRequest {
 }
 
 message SetResponse {
-    bool success = 1;
 }

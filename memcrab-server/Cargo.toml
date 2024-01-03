@@ -9,3 +9,6 @@ edition = "2021"
 memcrab-cache = { version = "0.1.0", path = "../memcrab-cache" }
 prost = { workspace = true }
 tonic = { workspace = true }
+
+[dev-dependencies]
+tokio = { version = "1.35.1", features = ["full"] }

@@ -2,7 +2,7 @@ use std::{fs, path::Path};
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
-    let default = "proto/grpc.proto".to_string();
+    let default = "proto/cache_grpc.proto".to_string();
     let relative_path = args.get(1).unwrap_or(&default);
 
     let curr_dir = std::env::current_dir().unwrap();

@@ -20,24 +20,25 @@ pub struct SetRequest {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct SetResponse {
-    #[prost(bool, tag = "1")]
-    pub success: bool,
-}
+pub struct SetResponse {}
 /// Generated server implementations.
-pub mod getter_server {
+pub mod cache_rpc_server {
     #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
     use tonic::codegen::*;
-    /// Generated trait containing gRPC methods that should be implemented for use with GetterServer.
+    /// Generated trait containing gRPC methods that should be implemented for use with CacheRpcServer.
     #[async_trait]
-    pub trait Getter: Send + Sync + 'static {
+    pub trait CacheRpc: Send + Sync + 'static {
         async fn get(
             &self,
             request: tonic::Request<super::GetRequest>,
         ) -> std::result::Result<tonic::Response<super::GetResponse>, tonic::Status>;
+        async fn set(
+            &self,
+            request: tonic::Request<super::SetRequest>,
+        ) -> std::result::Result<tonic::Response<super::SetResponse>, tonic::Status>;
     }
     #[derive(Debug)]
-    pub struct GetterServer<T: Getter> {
+    pub struct CacheRpcServer<T: CacheRpc> {
         inner: _Inner<T>,
         accept_compression_encodings: EnabledCompressionEncodings,
         send_compression_encodings: EnabledCompressionEncodings,
@@ -45,7 +46,7 @@ pub mod getter_server {
         max_encoding_message_size: Option<usize>,
     }
     struct _Inner<T>(Arc<T>);
-    impl<T: Getter> GetterServer<T> {
+    impl<T: CacheRpc> CacheRpcServer<T> {
         pub fn new(inner: T) -> Self {
             Self::from_arc(Arc::new(inner))
         }
@@ -97,9 +98,9 @@ pub mod getter_server {
             self
         }
     }
-    impl<T, B> tonic::codegen::Service<http::Request<B>> for GetterServer<T>
+    impl<T, B> tonic::codegen::Service<http::Request<B>> for CacheRpcServer<T>
     where
-        T: Getter,
+        T: CacheRpc,
         B: Body + Send + 'static,
         B::Error: Into<StdError> + Send + 'static,
     {
@@ -115,10 +116,10 @@ pub mod getter_server {
         fn call(&mut self, req: http::Request<B>) -> Self::Future {
             let inner = self.inner.clone();
             match req.uri().path() {
-                "/rpc.Getter/Get" => {
+                "/cache_grpc.CacheRPC/Get" => {
                     #[allow(non_camel_case_types)]
-                    struct GetSvc<T: Getter>(pub Arc<T>);
-                    impl<T: Getter> tonic::server::UnaryService<super::GetRequest>
+                    struct GetSvc<T: CacheRpc>(pub Arc<T>);
+                    impl<T: CacheRpc> tonic::server::UnaryService<super::GetRequest>
                     for GetSvc<T> {
                         type Response = super::GetResponse;
                         type Future = BoxFuture<
@@ -131,7 +132,7 @@ pub mod getter_server {
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as Getter>::get(&inner, request).await
+                                <T as CacheRpc>::get(&inner, request).await
                             };
                             Box::pin(fut)
                         }
@@ -159,142 +160,10 @@ pub mod getter_server {
                     };
                     Box::pin(fut)
                 }
-                _ => {
-                    Box::pin(async move {
-                        Ok(
-                            http::Response::builder()
-                                .status(200)
-                                .header("grpc-status", "12")
-                                .header("content-type", "application/grpc")
-                                .body(empty_body())
-                                .unwrap(),
-                        )
-                    })
-                }
-            }
-        }
-    }
-    impl<T: Getter> Clone for GetterServer<T> {
-        fn clone(&self) -> Self {
-            let inner = self.inner.clone();
-            Self {
-                inner,
-                accept_compression_encodings: self.accept_compression_encodings,
-                send_compression_encodings: self.send_compression_encodings,
-                max_decoding_message_size: self.max_decoding_message_size,
-                max_encoding_message_size: self.max_encoding_message_size,
-            }
-        }
-    }
-    impl<T: Getter> Clone for _Inner<T> {
-        fn clone(&self) -> Self {
-            Self(Arc::clone(&self.0))
-        }
-    }
-    impl<T: std::fmt::Debug> std::fmt::Debug for _Inner<T> {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            write!(f, "{:?}", self.0)
-        }
-    }
-    impl<T: Getter> tonic::server::NamedService for GetterServer<T> {
-        const NAME: &'static str = "rpc.Getter";
-    }
-}
-/// Generated server implementations.
-pub mod setter_server {
-    #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
-    use tonic::codegen::*;
-    /// Generated trait containing gRPC methods that should be implemented for use with SetterServer.
-    #[async_trait]
-    pub trait Setter: Send + Sync + 'static {
-        async fn set(
-            &self,
-            request: tonic::Request<super::SetRequest>,
-        ) -> std::result::Result<tonic::Response<super::SetResponse>, tonic::Status>;
-    }
-    #[derive(Debug)]
-    pub struct SetterServer<T: Setter> {
-        inner: _Inner<T>,
-        accept_compression_encodings: EnabledCompressionEncodings,
-        send_compression_encodings: EnabledCompressionEncodings,
-        max_decoding_message_size: Option<usize>,
-        max_encoding_message_size: Option<usize>,
-    }
-    struct _Inner<T>(Arc<T>);
-    impl<T: Setter> SetterServer<T> {
-        pub fn new(inner: T) -> Self {
-            Self::from_arc(Arc::new(inner))
-        }
-        pub fn from_arc(inner: Arc<T>) -> Self {
-            let inner = _Inner(inner);
-            Self {
-                inner,
-                accept_compression_encodings: Default::default(),
-                send_compression_encodings: Default::default(),
-                max_decoding_message_size: None,
-                max_encoding_message_size: None,
-            }
-        }
-        pub fn with_interceptor<F>(
-            inner: T,
-            interceptor: F,
-        ) -> InterceptedService<Self, F>
-        where
-            F: tonic::service::Interceptor,
-        {
-            InterceptedService::new(Self::new(inner), interceptor)
-        }
-        /// Enable decompressing requests with the given encoding.
-        #[must_use]
-        pub fn accept_compressed(mut self, encoding: CompressionEncoding) -> Self {
-            self.accept_compression_encodings.enable(encoding);
-            self
-        }
-        /// Compress responses with the given encoding, if the client supports it.
-        #[must_use]
-        pub fn send_compressed(mut self, encoding: CompressionEncoding) -> Self {
-            self.send_compression_encodings.enable(encoding);
-            self
-        }
-        /// Limits the maximum size of a decoded message.
-        ///
-        /// Default: `4MB`
-        #[must_use]
-        pub fn max_decoding_message_size(mut self, limit: usize) -> Self {
-            self.max_decoding_message_size = Some(limit);
-            self
-        }
-        /// Limits the maximum size of an encoded message.
-        ///
-        /// Default: `usize::MAX`
-        #[must_use]
-        pub fn max_encoding_message_size(mut self, limit: usize) -> Self {
-            self.max_encoding_message_size = Some(limit);
-            self
-        }
-    }
-    impl<T, B> tonic::codegen::Service<http::Request<B>> for SetterServer<T>
-    where
-        T: Setter,
-        B: Body + Send + 'static,
-        B::Error: Into<StdError> + Send + 'static,
-    {
-        type Response = http::Response<tonic::body::BoxBody>;
-        type Error = std::convert::Infallible;
-        type Future = BoxFuture<Self::Response, Self::Error>;
-        fn poll_ready(
-            &mut self,
-            _cx: &mut Context<'_>,
-        ) -> Poll<std::result::Result<(), Self::Error>> {
-            Poll::Ready(Ok(()))
-        }
-        fn call(&mut self, req: http::Request<B>) -> Self::Future {
-            let inner = self.inner.clone();
-            match req.uri().path() {
-                "/rpc.Setter/Set" => {
+                "/cache_grpc.CacheRPC/Set" => {
                     #[allow(non_camel_case_types)]
-                    struct SetSvc<T: Setter>(pub Arc<T>);
-                    impl<T: Setter> tonic::server::UnaryService<super::SetRequest>
+                    struct SetSvc<T: CacheRpc>(pub Arc<T>);
+                    impl<T: CacheRpc> tonic::server::UnaryService<super::SetRequest>
                     for SetSvc<T> {
                         type Response = super::SetResponse;
                         type Future = BoxFuture<
@@ -307,7 +176,7 @@ pub mod setter_server {
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as Setter>::set(&inner, request).await
+                                <T as CacheRpc>::set(&inner, request).await
                             };
                             Box::pin(fut)
                         }
@@ -350,7 +219,7 @@ pub mod setter_server {
             }
         }
     }
-    impl<T: Setter> Clone for SetterServer<T> {
+    impl<T: CacheRpc> Clone for CacheRpcServer<T> {
         fn clone(&self) -> Self {
             let inner = self.inner.clone();
             Self {
@@ -362,7 +231,7 @@ pub mod setter_server {
             }
         }
     }
-    impl<T: Setter> Clone for _Inner<T> {
+    impl<T: CacheRpc> Clone for _Inner<T> {
         fn clone(&self) -> Self {
             Self(Arc::clone(&self.0))
         }
@@ -372,7 +241,7 @@ pub mod setter_server {
             write!(f, "{:?}", self.0)
         }
     }
-    impl<T: Setter> tonic::server::NamedService for SetterServer<T> {
-        const NAME: &'static str = "rpc.Setter";
+    impl<T: CacheRpc> tonic::server::NamedService for CacheRpcServer<T> {
+        const NAME: &'static str = "cache_grpc.CacheRPC";
     }
 }

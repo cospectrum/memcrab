@@ -1,5 +1,9 @@
 # protogen
 
 ```sh
-cargo run proto/<name>.proto
+cargo run
+```
+or
+```sh
+cargo make all
 ```
