@@ -1,6 +1,6 @@
 #[allow(clippy::all)]
 #[rustfmt::skip]
-mod pb;
+pub mod pb;
 
 #[cfg(test)]
 mod tests {}

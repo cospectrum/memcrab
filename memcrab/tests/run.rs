@@ -1,16 +1,6 @@
-# memcrab
-
-`memcrab` client.
-
-## Examples
-
-### gRPC
-
-```rust
 use memcrab::pb::{cache_rpc_client::CacheRpcClient, GetRequest, SetRequest};
 
-#[tokio::main]
-async fn main() {
+async fn _test_client() {
     let dst_addr = "http://[::1]:50051";
     let mut client = CacheRpcClient::connect(dst_addr).await.unwrap();
 
@@ -23,10 +13,10 @@ async fn main() {
     match resp.value {
         Some(val) => {
             println!("got bytes from cache: {:?}", val);
-        },
+        }
         None => {
             println!("no value in cache");
-        },
+        }
     }
 
     let msg = SetRequest {
@@ -36,4 +26,3 @@ async fn main() {
     let req = tonic::Request::new(msg);
     client.set(req).await.unwrap();
 }
-```
