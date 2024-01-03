@@ -12,3 +12,5 @@ readme = "../README.md"
 repository = "https://github.com/cospectrum/memcrab"
 
 [dependencies]
+prost = { workspace = true }
+tonic = { workspace = true }
