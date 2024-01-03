@@ -1,6 +1,7 @@
+use anyhow::bail;
 use clap::Parser;
 use core::num::NonZeroUsize;
-use memcrab::pb::{cache_rpc_client::CacheRpcClient, GetRequest, SetRequest};
+use memcrab::RawClient;
 use memcrab_cache::Cache;
 use memcrab_server::start_grpc_server;
 use rustyline::error::ReadlineError;
@@ -20,7 +21,7 @@ struct Cli {
 }
 
 async fn eval_lines(addr: String) -> anyhow::Result<()> {
-    let mut client = CacheRpcClient::connect(addr).await.unwrap();
+    let mut client = RawClient::connect(format!("http://{}", addr)).await?;
     let mut editor = DefaultEditor::new()?;
     loop {
         let line = editor.readline("memcrab> ");
@@ -47,42 +48,36 @@ async fn eval_lines(addr: String) -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn eval_line(
-    client: &mut CacheRpcClient<tonic::transport::Channel>,
-    line: String,
-) -> anyhow::Result<()> {
+async fn eval_line(client: &mut RawClient, line: String) -> anyhow::Result<()> {
     let tokens = line.split_whitespace().collect::<Vec<_>>();
     if tokens.is_empty() {
         return Ok(());
     }
     if tokens[0] == "get" {
         if tokens.len() != 2 {
-            anyhow::bail!("syntax error: expected one key after `get`");
+            bail!("syntax error: expected one key after `get`");
         }
-        let msg = GetRequest {
-            key: tokens[1].to_owned(),
-        };
-        let req = tonic::Request::new(msg);
-        let resp = client.get(req).await?.into_inner();
-        match resp.value {
+        let resp = client.get(tokens[1]).await?;
+        match resp {
             Some(val) => println!("{}: {:?}", tokens[1], val),
             None => println!("no value set"),
         }
     } else if tokens[0] == "set" {
         if tokens.len() < 3 {
-            anyhow::bail!("syntax error: expected one key and bytes after `set`");
+            bail!("syntax error: expected one key and bytes after `set`");
         }
-        let msg = SetRequest {
-            key: tokens[1].to_owned(),
-            value: tokens[2..]
-                .iter()
-                .map(|&s| s.parse().unwrap())
-                .collect::<Vec<u8>>(),
-        };
-        let req = tonic::Request::new(msg);
-        client.set(req).await?;
+
+        client
+            .set(
+                tokens[1],
+                tokens[2..]
+                    .iter()
+                    .map(|&s| s.parse().unwrap())
+                    .collect::<Vec<u8>>(),
+            )
+            .await?;
     } else {
-        anyhow::bail!("syntax error: unexpected token {}", tokens[0]);
+        bail!("syntax error: unexpected token {}", tokens[0]);
     }
     Ok(())
 }
@@ -105,7 +100,7 @@ async fn main() -> anyhow::Result<()> {
     if cli.server {
         serve(addr).await?;
     } else {
-        eval_lines(format!("http://{}", addr)).await?;
+        eval_lines(addr).await?;
     }
     Ok(())
 }
