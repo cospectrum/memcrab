@@ -19,26 +19,26 @@ struct Cli {
     server: bool,
 }
 
-// struct REPLSyntaxError;
-
 async fn eval_lines(addr: String) -> anyhow::Result<()> {
     let mut client = CacheRpcClient::connect(addr).await.unwrap();
-    let mut readline = DefaultEditor::new()?;
+    let mut editor = DefaultEditor::new()?;
     loop {
-        let rl = readline.readline("memcrab> ");
-        match rl {
+        let line = editor.readline("memcrab> ");
+        match line {
             Ok(line) => {
-                eval_line(&mut client, line).await?;
+                eval_line(&mut client, line)
+                    .await
+                    .unwrap_or_else(|e| println!("error: {:?}", e));
             }
             Err(ReadlineError::Interrupted) => {
-                println!("Ctrl-C");
+                println!("Ctrl-c");
             }
             Err(ReadlineError::Eof) => {
-                println!("Quit");
+                println!("quit");
                 break;
             }
             Err(err) => {
-                println!("Error: {:?}", err);
+                println!("error: {:?}", err);
                 break;
             }
         }
@@ -52,17 +52,26 @@ async fn eval_line(
     line: String,
 ) -> anyhow::Result<()> {
     let tokens = line.split_whitespace().collect::<Vec<_>>();
+    if tokens.is_empty() {
+        return Ok(());
+    }
     if tokens[0] == "get" {
+        if tokens.len() != 2 {
+            anyhow::bail!("syntax error: expected one key after `get`");
+        }
         let msg = GetRequest {
             key: tokens[1].to_owned(),
         };
         let req = tonic::Request::new(msg);
         let resp = client.get(req).await?.into_inner();
         match resp.value {
-            Some(val) => println!("value: {:?}", val),
+            Some(val) => println!("{}: {:?}", tokens[1], val),
             None => println!("no value set"),
         }
     } else if tokens[0] == "set" {
+        if tokens.len() < 3 {
+            anyhow::bail!("syntax error: expected one key and bytes after `set`");
+        }
         let msg = SetRequest {
             key: tokens[1].to_owned(),
             value: tokens[2..]
@@ -72,6 +81,8 @@ async fn eval_line(
         };
         let req = tonic::Request::new(msg);
         client.set(req).await?;
+    } else {
+        anyhow::bail!("syntax error: unexpected token {}", tokens[0]);
     }
     Ok(())
 }
