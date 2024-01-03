@@ -34,8 +34,10 @@ dependencies = [
     "fmt",
     "clippy",
     "doc",
-    "tests",
 ]
 
 [tasks.all]
-dependencies = ["pre-commit"]
+dependencies = [
+    "pre-commit",
+    "tests",
+]
