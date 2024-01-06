@@ -16,4 +16,4 @@ prost = { workspace = true }
 tonic = { workspace = true }
 
 [dev-dependencies]
-anyhow = "1.0.79"
+anyhow.workspace = true
