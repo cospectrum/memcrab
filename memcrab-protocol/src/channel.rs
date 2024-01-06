@@ -49,14 +49,7 @@ mod tests {
     impl AsyncReader for MockLinearStream {
         async fn read_exact(&mut self, buf: &mut [u8]) -> Result<usize, ProtocolError> {
             let size = buf.len();
-            let v = &self.buf[self.start..size];
-            if v.len() != size {
-                return Err(ProtocolError::IncompleteRead {
-                    expected_size: size,
-                    buf: buf.into(),
-                });
-            }
-
+            let v = &self.buf[self.start..self.start + size];
             assert_eq!(v.len(), buf.len());
             for (&src, dst) in v.iter().zip(buf) {
                 *dst = src;
@@ -72,6 +65,8 @@ mod tests {
         let mut channel = MemcrabChannel::new(mock_stream);
 
         let chunk = channel.next_chunk(2).await.unwrap();
-        assert_eq!(chunk, [0, 2])
+        assert_eq!(chunk, [0, 2]);
+        let chunk = channel.next_chunk(2).await.unwrap();
+        assert_eq!(chunk, [1, 1]);
     }
 }
