@@ -2,21 +2,21 @@ use crate::tokens::Msg;
 use crate::{AsyncReader, ProtocolError};
 
 #[allow(dead_code)]
-pub struct MemcrabChannel<R: AsyncReader> {
-    reader: R,
+pub struct MemcrabChannel<S: AsyncReader> {
+    stream: S,
 }
 
-impl<R> MemcrabChannel<R>
+impl<S> MemcrabChannel<S>
 where
-    R: AsyncReader,
+    S: AsyncReader,
 {
-    pub fn new(reader: R) -> Self {
-        Self { reader }
+    pub fn new(stream: S) -> Self {
+        Self { stream }
     }
     #[allow(dead_code)]
     async fn next_chunk(&mut self, size: usize) -> Result<Vec<u8>, ProtocolError> {
         let mut buf = vec![0; size];
-        let n = self.reader.read_exact(&mut buf).await?;
+        let n = self.stream.read_exact(&mut buf).await?;
         if n != size {
             return Err(ProtocolError::IncompleteRead {
                 expected_size: size,
@@ -34,19 +34,19 @@ where
 mod tests {
     use super::*;
 
-    struct MockLinearReader {
+    struct MockLinearStream {
         buf: Vec<u8>,
         start: usize,
     }
 
-    impl MockLinearReader {
+    impl MockLinearStream {
         fn new(buf: Vec<u8>) -> Self {
             Self { buf, start: 0 }
         }
     }
 
     #[async_trait::async_trait]
-    impl AsyncReader for MockLinearReader {
+    impl AsyncReader for MockLinearStream {
         async fn read_exact(&mut self, buf: &mut [u8]) -> Result<usize, ProtocolError> {
             let size = buf.len();
             let v = &self.buf[self.start..size];
@@ -68,10 +68,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_chunk() {
-        let mock_reader = MockLinearReader::new(vec![0, 2, 1, 1]);
-        let mut producer = MemcrabChannel::new(mock_reader);
+        let mock_stream = MockLinearStream::new(vec![0, 2, 1, 1]);
+        let mut channel = MemcrabChannel::new(mock_stream);
 
-        let chunk = producer.next_chunk(2).await.unwrap();
+        let chunk = channel.next_chunk(2).await.unwrap();
         assert_eq!(chunk, [0, 2])
     }
 }
