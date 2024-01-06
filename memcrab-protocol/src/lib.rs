@@ -4,8 +4,8 @@ use tokio::net::tcp::OwnedReadHalf;
 
 type Bytes = Vec<u8>;
 
-fn four_bytes_to_usize(bytes: &Bytes) -> usize {
-    debug_assert_eq!(bytes.len(), 4, "Are you stupid?");
+fn four_bytes_to_usize(bytes: &[u8]) -> usize {
+    assert_eq!(bytes.len(), 4);
 
     (bytes[0] as usize) << 24
         | (bytes[1] as usize) << 16
@@ -102,7 +102,7 @@ mod tests {
     #[tokio::test]
     async fn test_get() {
         let mock_reader = MockReader::new( 
-            vec![vec![0, 2, 1, 1].into()],
+            vec![vec![0, 2, 1, 1]],
         );
         let mut producer = Producer::new(mock_reader);
 
@@ -112,7 +112,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_with_partitions() {
-        let mock_reader = MockReader::new(vec![vec![0].into(), vec![3, 1].into(), vec![2, 3].into()]);
+        let mock_reader = MockReader::new(vec![vec![0], vec![3, 1], vec![2, 3]]);
         let mut producer = Producer::new(mock_reader);
 
         let msg = producer.next_msg().await;
@@ -122,7 +122,7 @@ mod tests {
     #[tokio::test]
     async fn test_set() {
         let mock_reader = MockReader::new(
-            vec![vec![1, 1, 1, 0, 0, 0, 3, 8, 8, 8]].into(),
+            vec![vec![1, 1, 1, 0, 0, 0, 3, 8, 8, 8]],
         );
         let mut producer = Producer::new(mock_reader);
 
