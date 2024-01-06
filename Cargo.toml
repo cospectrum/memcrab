@@ -6,6 +6,7 @@ members = [
     "memcrab-cache",
     "memcrab-server",
     "memcrab-protocol",
+    "memcrab-cli",
 ]
 exclude = ["examples"]
 

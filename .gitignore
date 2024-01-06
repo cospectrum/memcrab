@@ -199,6 +199,7 @@ Cargo.lock
 
 # !src
 !memcrab
+!memcrab-cli
 !memcrab-cache
 !memcrab-server
 !memcrab-protocol

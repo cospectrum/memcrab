@@ -4,4 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+async-trait = "0.1.77"
 tokio = { workspace = true, features = ["io-util", "net"] }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["full"] }
