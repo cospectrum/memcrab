@@ -201,3 +201,4 @@ Cargo.lock
 !memcrab
 !memcrab-cache
 !memcrab-server
+!memcrab-protocol
