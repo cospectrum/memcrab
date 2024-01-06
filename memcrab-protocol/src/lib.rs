@@ -4,8 +4,8 @@ use tokio::io::AsyncReadExt;
 
 type Bytes = Vec<u8>;
 
-fn four_bytes_to_usize(bytes: &Bytes) -> usize {
-    debug_assert_eq!(bytes.len(), 4, "Are you stupid?");
+fn four_bytes_to_usize(bytes: &[u8]) -> usize {
+    assert_eq!(bytes.len(), 4);
 
     (bytes[0] as usize) << 24
         | (bytes[1] as usize) << 16
