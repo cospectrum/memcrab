@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 async-trait = "0.1.77"
+thiserror.workspace = true
 tokio = { workspace = true, features = ["io-util", "net"] }
 
 [dev-dependencies]
