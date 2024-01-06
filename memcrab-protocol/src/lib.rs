@@ -1,5 +1,6 @@
 use std::io;
 use tokio::net::tcp::OwnedReadHalf;
+use tokio::io::AsyncReadExt;
 
 type Bytes = Vec<u8>;
 
@@ -22,8 +23,7 @@ pub trait AsyncReader {
 #[async_trait::async_trait]
 impl AsyncReader for OwnedReadHalf {
     async fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
-        self.readable().await?;
-        self.try_read(buf)
+        AsyncReadExt::read(self, buf).await
     }
 }
 
@@ -120,18 +120,18 @@ mod tests {
     use super::*;
 
     struct MockReader {
-        data: Vec<Vec<u8>>,
+        parts: Vec<Vec<u8>>,
     }
 
     #[async_trait::async_trait]
     impl AsyncReader for MockReader {
         async fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
-            if !self.data.is_empty() {
-                let part = self.data.remove(0);
+            if !self.parts.is_empty() {
+                let part = self.parts.remove(0);
                 for (i, b) in part.iter().enumerate() {
                     buf[i] = *b;
                 }
-                Ok(100)
+                Ok(part.len())
             } else {
                 Ok(0)
             }
@@ -139,9 +139,31 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_get() {
+        let mock_reader = MockReader {
+            parts: vec![vec![0, 2, 1, 1].into()],
+        };
+        let mut producer = Producer::new(mock_reader);
+
+        let msg = producer.next_msg().await;
+        assert_eq!(msg.unwrap().unwrap(), Msg::Get(vec![1, 1]))
+    }
+
+    #[tokio::test]
+    async fn test_get_with_partitions() {
+        let mock_reader = MockReader {
+            parts: vec![vec![0].into(), vec![3, 1].into(), vec![2, 3].into()],
+        };
+        let mut producer = Producer::new(mock_reader);
+
+        let msg = producer.next_msg().await;
+        assert_eq!(msg.unwrap().unwrap(), Msg::Get(vec![1, 2, 3]))
+    }
+
+    #[tokio::test]
     async fn test_set() {
         let mock_reader = MockReader {
-            data: vec![vec![1, 1, 1, 0, 0, 0, 3, 8, 8, 8]].into(),
+            parts: vec![vec![1, 1, 1, 0, 0, 0, 3, 8, 8, 8]].into(),
         };
         let mut producer = Producer::new(mock_reader);
 
