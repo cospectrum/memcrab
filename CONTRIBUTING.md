@@ -4,7 +4,9 @@ All pull requests are welcome.
 
 ## TODO
 
-1. TCP
+1. New TCP transport support (from memcrap-protocol).
+2. Tests
+3. Doc
 
 ## Run CI locally
 
