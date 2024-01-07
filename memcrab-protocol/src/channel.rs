@@ -26,7 +26,9 @@ where
         Ok(buf)
     }
     pub async fn next_msg(&mut self) -> Result<Msg, ProtocolError> {
-        todo!()
+        let header = self.next_chunk(8).await?;
+        debug_assert_eq!(header.len(), 8);
+        todo!();
     }
 }
 
