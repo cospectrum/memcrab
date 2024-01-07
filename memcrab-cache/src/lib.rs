@@ -33,7 +33,7 @@ impl Cache {
         self.inner.is_empty()
     }
     pub fn size_of(key: &String, val: &Vec<u8>) -> usize {
-        key.capacity() + val.capacity()
+        key.as_bytes().len() + val.capacity()
     }
     pub fn get(&mut self, key: &str) -> Option<&Vec<u8>> {
         self.inner.get(key)
