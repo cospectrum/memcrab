@@ -7,4 +7,4 @@ pub mod tokens;
 pub use channel::MemcrabChannel;
 pub use err::ProtocolError;
 
-pub use io::AsyncReader;
+pub use io::{AsyncReader, AsyncWriter};
