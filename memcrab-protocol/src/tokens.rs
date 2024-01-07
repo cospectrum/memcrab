@@ -2,13 +2,13 @@
 
 pub enum Header {
     GetRequest { klen: u8 },
-    SetRequest { klen: u8, vlen: u64, exp: u64 },
+    SetRequest { klen: u8, vlen: u32, exp: u64 },
     DeleteRequest { klen: u8 },
     ClearRequest,
 
-    ClientErrorResponse,
-    ServerErrorResponse,
-    ValueResponse { vlen: u64 },
+    ClientErrorResponse { vlen: u32 },
+    ServerErrorResponse { vlen: u32 },
+    ValueResponse { vlen: u32 },
     KeyMissResponse,
     SetSuccessResponse,
     DeleteSuccessResponse,
