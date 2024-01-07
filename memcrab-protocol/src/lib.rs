@@ -1,4 +1,6 @@
 mod err;
+
+mod parser;
 mod socket;
 
 pub mod io;
@@ -6,3 +8,4 @@ pub mod io;
 pub mod tokens;
 
 pub use err::ProtocolError;
+pub use socket::{ClientSocket, ServerSocket};
