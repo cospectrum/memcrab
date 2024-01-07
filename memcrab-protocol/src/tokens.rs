@@ -3,7 +3,7 @@
 pub enum Header {
     GetRequest { klen: u8 },
     SetRequest { klen: u8, vlen: u64, exp: u64 },
-    DeleteRequest { klen: u8, vlen: u64 },
+    DeleteRequest { klen: u8 },
     ClearRequest,
 
     ClientErrorResponse,
