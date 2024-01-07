@@ -2,6 +2,7 @@ mod channel;
 mod err;
 mod io;
 
+#[allow(dead_code)]
 pub mod tokens;
 
 pub use channel::MemcrabChannel;

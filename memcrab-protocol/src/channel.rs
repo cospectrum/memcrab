@@ -1,4 +1,3 @@
-use crate::tokens::Msg;
 use crate::{AsyncReader, ProtocolError};
 
 #[allow(dead_code)]
@@ -24,9 +23,6 @@ where
             });
         }
         Ok(buf)
-    }
-    pub async fn next_msg(&mut self) -> Result<Msg, ProtocolError> {
-        todo!()
     }
 }
 
