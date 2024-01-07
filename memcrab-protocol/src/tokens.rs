@@ -38,13 +38,3 @@ pub enum Cmd {
     },
     Clear,
 }
-
-pub enum Response {
-    ClientError { msg: String },
-    ServerError { msg: String },
-    Value { value: Vec<u8> },
-    KeyMiss,
-    SetSuccess,
-    DeleteSuccess,
-    ClearSuccess,
-}
