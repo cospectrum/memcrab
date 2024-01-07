@@ -5,8 +5,10 @@ edition = "2021"
 
 [dependencies]
 async-trait = "0.1.77"
+serde = { version = "1.0.195", features = ["derive"] }
 thiserror.workspace = true
 tokio = { workspace = true, features = ["io-util", "net"] }
 
 [dev-dependencies]
+serde_json = "1.0.111"
 tokio = { workspace = true, features = ["full"] }
