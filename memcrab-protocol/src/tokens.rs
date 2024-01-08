@@ -1,40 +1,105 @@
+use std::mem::size_of;
+
 // client writes this msg, server reads
 #[derive(Debug)]
 pub struct Request {
-    header: RequestHeader,
-    payload: Option<Vec<u8>>,
+    pub header: RequestHeader,
+    pub payload: Payload,
 }
 
 // server writes this msg, client reads
 #[derive(Debug)]
 pub struct Response {
-    header: ResponseHeader,
-    payload: Option<Vec<u8>>,
+    pub header: ResponseHeader,
+    pub payload: Payload,
+}
+
+#[derive(Debug)]
+pub enum Payload {
+    Zero,
+    Item { key: Vec<u8>, value: Vec<u8> },
+    Value(Vec<u8>),
 }
 
 #[derive(Debug)]
 pub enum RequestHeader {
-    Ping,
-    Get { klen: u64 },
-    Set { klen: u64, vlen: u64, exp: Seconds },
+    Get {
+        klen: u64,
+    },
+    Set {
+        klen: u64,
+        vlen: u64,
+        expiration: u32,
+    }, // max
+    Delete {
+        klen: u64,
+    },
     Clear,
-    Delete { klen: u64 },
+    Ping,
+}
+
+impl RequestHeader {
+    pub(crate) const fn byte_size(&self) -> usize {
+        Self::size_of()
+    }
+    pub(crate) const fn size_of() -> usize {
+        1 + 2 * size_of::<u64>() + size_of::<u32>()
+    }
+    pub(crate) fn flag(&self) -> u8 {
+        match self {
+            Self::Get { .. } => 0,
+            Self::Set { .. } => 1,
+            Self::Delete { .. } => 2,
+            Self::Clear => 3,
+            Self::Ping => 4,
+        }
+    }
 }
 
 #[derive(Debug)]
 pub enum ResponseHeader {
-    Error(Error),
-    Pong,
     Value { vlen: u64 },
-    KeyNotFound,
     Ok,
+    Error(Error), // max
+    KeyNotFound,
+    Pong,
 }
 
-#[derive(Debug)]
+impl ResponseHeader {
+    pub(crate) const fn byte_size(&self) -> usize {
+        Self::size_of()
+    }
+    pub(crate) const fn size_of() -> usize {
+        1 + Error::size_of()
+    }
+    pub(crate) fn flag(&self) -> u8 {
+        match self {
+            Self::Value { .. } => 0,
+            Self::Ok => 1,
+            Self::Error(_) => 2,
+            Self::KeyNotFound => 3,
+            Self::Pong => 4,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub enum Error {
     Validation { len: u64 },
     Internal { len: u64 },
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct Seconds(pub u64);
+impl Error {
+    pub(crate) const fn byte_size(&self) -> usize {
+        Self::size_of()
+    }
+    pub(crate) const fn size_of() -> usize {
+        1 + size_of::<u64>()
+    }
+    pub(crate) fn flag(&self) -> u8 {
+        match self {
+            Self::Validation { .. } => 0,
+            Self::Internal { .. } => 1,
+        }
+    }
+}
