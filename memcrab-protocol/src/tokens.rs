@@ -17,8 +17,16 @@ pub struct Response {
 #[derive(Debug)]
 pub enum Payload {
     Zero,
-    Item { key: Vec<u8>, value: Vec<u8> },
-    Value(Vec<u8>),
+    Raw(Vec<u8>),
+}
+
+impl Payload {
+    pub(crate) fn len(&self) -> usize {
+        match self {
+            Self::Zero => 0,
+            Self::Raw(v) => v.len(),
+        }
+    }
 }
 
 #[derive(Debug)]
