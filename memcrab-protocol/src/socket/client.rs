@@ -1,7 +1,6 @@
 use crate::{
     io::{AsyncReader, AsyncWriter},
-    parser::Parser,
-    tokens, ProtocolError,
+    tokens, Parser, ProtocolError,
 };
 
 pub struct ClientSocket<S> {
@@ -30,7 +29,7 @@ where
 
         let header_size = 0;
         let resp = self.stream.read_chunk(header_size).await?;
-        let resp = self.parser.decode_response(&resp);
+        let resp = self.parser.decode_response(&resp)?;
 
         todo!()
     }
