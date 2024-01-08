@@ -1,11 +1,11 @@
-// client writes this msg, server reads
+/// client -> server msg
 #[derive(Debug)]
 pub struct Request {
     pub header: RequestHeader,
     pub payload: Payload,
 }
 
-// server writes this msg, client reads
+/// server -> client msg
 #[derive(Debug)]
 pub struct Response {
     pub header: ResponseHeader,
@@ -15,14 +15,15 @@ pub struct Response {
 #[derive(Debug)]
 pub enum Payload {
     Zero,
-    Raw(Vec<u8>),
+    Data(Vec<u8>),
 }
 
 impl Payload {
+    #[allow(unused)]
     pub(crate) fn len(&self) -> usize {
         match self {
             Self::Zero => 0,
-            Self::Raw(v) => v.len(),
+            Self::Data(v) => v.len(),
         }
     }
 }
@@ -36,7 +37,7 @@ pub enum RequestHeader {
         klen: u64,
         vlen: u64,
         expiration: u32,
-    }, // max
+    },
     Delete {
         klen: u64,
     },
@@ -44,10 +45,25 @@ pub enum RequestHeader {
     Ping,
 }
 
+impl RequestHeader {
+    pub fn klen_size() -> usize {
+        8
+    }
+    pub fn vlen_size() -> usize {
+        8
+    }
+    pub fn expiration_size() -> usize {
+        4
+    }
+    pub fn size() -> usize {
+        1 + Self::klen_size() + Self::vlen_size() + Self::expiration_size()
+    }
+}
+
 #[derive(Debug)]
 pub enum ResponseHeader {
     Ok,
-    Error(Error), // max
+    Error(Error),
     Value { vlen: u64 },
     KeyNotFound,
     Pong,
