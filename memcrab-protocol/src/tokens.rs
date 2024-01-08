@@ -1,5 +1,3 @@
-use std::mem::size_of;
-
 // client writes this msg, server reads
 #[derive(Debug)]
 pub struct Request {
@@ -46,24 +44,6 @@ pub enum RequestHeader {
     Ping,
 }
 
-impl RequestHeader {
-    pub(crate) const fn byte_size(&self) -> usize {
-        Self::bytesize()
-    }
-    pub(crate) const fn bytesize() -> usize {
-        1 + 2 * size_of::<u64>() + size_of::<u32>()
-    }
-    pub(crate) fn flag(&self) -> u8 {
-        match self {
-            Self::Get { .. } => 0,
-            Self::Set { .. } => 1,
-            Self::Delete { .. } => 2,
-            Self::Clear => 3,
-            Self::Ping => 4,
-        }
-    }
-}
-
 #[derive(Debug)]
 pub enum ResponseHeader {
     Value { vlen: u64 },
@@ -73,52 +53,11 @@ pub enum ResponseHeader {
     Pong,
 }
 
-impl ResponseHeader {
-    pub(crate) const fn byte_size(&self) -> usize {
-        Self::bytesize()
-    }
-    pub(crate) const fn bytesize() -> usize {
-        1 + Error::bytesize()
-    }
-    pub(crate) fn flag(&self) -> u8 {
-        match self {
-            Self::Value { .. } => 0,
-            Self::Ok => 1,
-            Self::Error(_) => 2,
-            Self::KeyNotFound => 3,
-            Self::Pong => 4,
-        }
-    }
-}
-
 #[derive(Debug, Clone)]
 pub enum Error {
     Validation { len: u64 },
     Internal { len: u64 },
 }
 
-impl Error {
-    pub(crate) const fn byte_size(&self) -> usize {
-        Self::bytesize()
-    }
-    pub(crate) const fn bytesize() -> usize {
-        1 + size_of::<u64>()
-    }
-    pub(crate) fn flag(&self) -> u8 {
-        match self {
-            Self::Validation { .. } => 0,
-            Self::Internal { .. } => 1,
-        }
-    }
-}
-
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use std::mem::size_of;
-
-    #[test]
-    fn test_size() {
-        assert_eq!(Error::bytesize(), 1 + size_of::<u64>());
-    }
-}
+mod tests {}

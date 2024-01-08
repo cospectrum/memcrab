@@ -1,11 +1,13 @@
 mod err;
 
-mod parser;
+mod parsing;
 mod socket;
 
 pub mod io;
 #[allow(dead_code)]
 pub mod tokens;
+
+pub use parsing::Parser;
 
 pub use err::ProtocolError;
 pub use socket::{ClientSocket, ServerSocket};
