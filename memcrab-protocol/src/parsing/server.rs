@@ -28,11 +28,9 @@ where
             .try_into()
             .map_err(|e| ProtocolError::Parsing(ParsingError::Header))?;
 
-        // this is horrible
-
         let k = 1..RequestHeader::klen_size() + 1;
-        let v = k.end + 1..RequestHeader::vlen_size();
-        let e = v.end + 1..RequestHeader::expiration_size();
+        let v = k.end + 1..k.end + 1 + RequestHeader::vlen_size();
+        let e = v.end + 1..v.end + 1 + RequestHeader::expiration_size();
 
         let klen = KeyLen::from_be_bytes(header[k].try_into().unwrap());
         let vlen = ValueLen::from_be_bytes(header[v].try_into().unwrap());
