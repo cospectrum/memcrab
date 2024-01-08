@@ -48,9 +48,9 @@ pub enum RequestHeader {
 
 impl RequestHeader {
     pub(crate) const fn byte_size(&self) -> usize {
-        Self::size_of()
+        Self::bytesize()
     }
-    pub(crate) const fn size_of() -> usize {
+    pub(crate) const fn bytesize() -> usize {
         1 + 2 * size_of::<u64>() + size_of::<u32>()
     }
     pub(crate) fn flag(&self) -> u8 {
@@ -75,10 +75,10 @@ pub enum ResponseHeader {
 
 impl ResponseHeader {
     pub(crate) const fn byte_size(&self) -> usize {
-        Self::size_of()
+        Self::bytesize()
     }
-    pub(crate) const fn size_of() -> usize {
-        1 + Error::size_of()
+    pub(crate) const fn bytesize() -> usize {
+        1 + Error::bytesize()
     }
     pub(crate) fn flag(&self) -> u8 {
         match self {
@@ -99,9 +99,9 @@ pub enum Error {
 
 impl Error {
     pub(crate) const fn byte_size(&self) -> usize {
-        Self::size_of()
+        Self::bytesize()
     }
-    pub(crate) const fn size_of() -> usize {
+    pub(crate) const fn bytesize() -> usize {
         1 + size_of::<u64>()
     }
     pub(crate) fn flag(&self) -> u8 {
@@ -109,5 +109,16 @@ impl Error {
             Self::Validation { .. } => 0,
             Self::Internal { .. } => 1,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::mem::size_of;
+
+    #[test]
+    fn test_size() {
+        assert_eq!(Error::bytesize(), 1 + size_of::<u64>());
     }
 }
