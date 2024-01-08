@@ -4,6 +4,7 @@ mod parsing;
 pub mod io;
 
 pub use parsing::ClientParser;
+pub use parsing::ParsingError;
 pub use parsing::ServerParser;
 
 pub use err::ProtocolError;

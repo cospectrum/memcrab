@@ -1,8 +1,14 @@
+use super::{
+    // err::ParsingError,
+    // flags::RequestKind,
+    // tokens::{Expiration, KeyLen, RequestHeader, Payload, Request, ValueLen},
+    tokens::Response,
+};
 use crate::{
     io::{AsyncReader, AsyncWriter},
-    parsing::tokens,
     ProtocolError,
 };
+
 pub struct ClientParser<S> {
     #[allow(unused)]
     stream: S,
@@ -17,18 +23,12 @@ where
     }
 
     #[allow(unused)]
-    pub async fn encode_request(
-        &mut self,
-        req: tokens::Request,
-    ) -> Result<tokens::Response, ProtocolError> {
+    pub async fn decode_response(&mut self) -> Result<Response, ProtocolError> {
         todo!()
     }
 
     #[allow(unused)]
-    pub async fn decode_response(
-        &mut self,
-        req: tokens::Request,
-    ) -> Result<tokens::Response, ProtocolError> {
+    pub async fn encode_request(&mut self) -> Result<(), ProtocolError> {
         todo!()
     }
 }

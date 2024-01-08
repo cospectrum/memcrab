@@ -1,3 +1,5 @@
+use std::mem::size_of;
+
 /// client -> server msg
 #[derive(Debug)]
 pub struct Request {
@@ -15,47 +17,44 @@ pub struct Response {
 #[derive(Debug)]
 pub enum Payload {
     Zero,
-    Data(Vec<u8>),
+    Key { key: String },
+    Value { value: Vec<u8> },
+    Pair { key: String, value: Vec<u8> },
+    ErrMsg(String),
 }
 
-impl Payload {
-    #[allow(unused)]
-    pub(crate) fn len(&self) -> usize {
-        match self {
-            Self::Zero => 0,
-            Self::Data(v) => v.len(),
-        }
-    }
-}
+pub type KeyLen = u64;
+pub type ValueLen = u64;
+pub type Expiration = u32;
 
 #[derive(Debug)]
 pub enum RequestHeader {
     Get {
-        klen: u64,
+        klen: KeyLen,
     },
     Set {
-        klen: u64,
-        vlen: u64,
-        expiration: u32,
+        klen: KeyLen,
+        vlen: ValueLen,
+        expiration: Expiration,
     },
     Delete {
-        klen: u64,
+        klen: KeyLen,
     },
     Clear,
     Ping,
 }
 
 impl RequestHeader {
-    pub fn klen_size() -> usize {
-        8
+    pub const fn klen_size() -> usize {
+        size_of::<KeyLen>()
     }
-    pub fn vlen_size() -> usize {
-        8
+    pub const fn vlen_size() -> usize {
+        size_of::<ValueLen>()
     }
-    pub fn expiration_size() -> usize {
-        4
+    pub const fn expiration_size() -> usize {
+        size_of::<Expiration>()
     }
-    pub fn size() -> usize {
+    pub const fn size() -> usize {
         1 + Self::klen_size() + Self::vlen_size() + Self::expiration_size()
     }
 }
