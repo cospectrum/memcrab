@@ -46,9 +46,9 @@ pub enum RequestHeader {
 
 #[derive(Debug)]
 pub enum ResponseHeader {
-    Value { vlen: u64 },
     Ok,
     Error(Error), // max
+    Value { vlen: u64 },
     KeyNotFound,
     Pong,
 }
