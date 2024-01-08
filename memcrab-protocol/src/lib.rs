@@ -1,11 +1,14 @@
-mod channel;
 mod err;
-mod io;
 
+mod parser;
+mod socket;
+
+pub mod io;
 #[allow(dead_code)]
 pub mod tokens;
 
-pub use channel::MemcrabChannel;
 pub use err::ProtocolError;
+pub use socket::{ClientSocket, ServerSocket};
 
-pub use io::AsyncReader;
+type ProtocolVersion = u16;
+pub const PROTOCOL_VERSION: ProtocolVersion = 0;
