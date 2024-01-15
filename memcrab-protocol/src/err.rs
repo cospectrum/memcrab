@@ -1,13 +1,19 @@
 use thiserror::Error;
 
-use crate::parsing::ParsingError;
-
 #[derive(Error, Debug)]
-pub enum ProtocolError {
+pub enum ClientSideError {
     #[error("io")]
     IO(#[from] std::io::Error),
-    #[error("failed to fill buffer")]
-    IncompleteRead { expected_size: usize, buf: Vec<u8> },
-    #[error("parser failed")]
+    #[error("parsing failed")]
     Parsing(#[from] ParsingError),
+}
+
+pub type ServerSideError = ClientSideError;
+
+#[derive(Error, Debug)]
+pub enum ParsingError {
+    #[error("invalid header")]
+    Header,
+    #[error("invalid payload")]
+    Payload,
 }
