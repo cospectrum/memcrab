@@ -61,7 +61,7 @@ impl RequestHeader {
 
 #[derive(Debug, Clone, Copy)]
 pub enum ResponseHeader {
-    Executed,
+    Ok,
     Error(ErrorHeader),
     Value { vlen: ValueLen },
     KeyNotFound,

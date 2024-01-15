@@ -1,13 +1,11 @@
 use tokio::io::AsyncReadExt;
 use tokio::net::TcpStream;
 
-use crate::MemcrabError;
-
 #[async_trait::async_trait]
-pub trait AsyncReader<Err = MemcrabError> {
-    async fn read_exact(&mut self, buf: &mut [u8]) -> Result<(), Err>;
+pub trait AsyncReader<E = std::io::Error> {
+    async fn read_exact(&mut self, buf: &mut [u8]) -> Result<(), E>;
 
-    async fn read_chunk(&mut self, size: usize) -> Result<Vec<u8>, Err> {
+    async fn read_chunk(&mut self, size: usize) -> Result<Vec<u8>, E> {
         let mut buf = vec![0; size];
         self.read_exact(&mut buf).await?;
         Ok(buf)
@@ -16,7 +14,7 @@ pub trait AsyncReader<Err = MemcrabError> {
 
 #[async_trait::async_trait]
 impl AsyncReader for TcpStream {
-    async fn read_exact(&mut self, buf: &mut [u8]) -> Result<(), MemcrabError> {
+    async fn read_exact(&mut self, buf: &mut [u8]) -> Result<(), std::io::Error> {
         let n = AsyncReadExt::read_exact(self, buf).await?;
         assert_eq!(n, buf.len());
         Ok(())
@@ -40,7 +38,7 @@ mod tests {
 
     #[async_trait::async_trait]
     impl AsyncReader for MockLinearStream {
-        async fn read_exact(&mut self, buf: &mut [u8]) -> Result<(), MemcrabError> {
+        async fn read_exact(&mut self, buf: &mut [u8]) -> Result<(), std::io::Error> {
             let size = buf.len();
             let v = &self.buf[self.start..self.start + size];
             assert_eq!(v.len(), buf.len());

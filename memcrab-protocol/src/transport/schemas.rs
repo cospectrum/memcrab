@@ -1,7 +1,13 @@
+use thiserror::Error;
+
 #[derive(Debug, Clone)]
 pub enum Request {
     Get(String),
-    Set(String, Vec<u8>),
+    Set {
+        key: String,
+        val: Vec<u8>,
+        expiration: u32,
+    },
     Delete(String),
     Clear,
     Ping,
@@ -10,7 +16,16 @@ pub enum Request {
 #[derive(Debug, Clone)]
 pub enum Response {
     Value(Vec<u8>),
-    Executed,
+    Ok,
+    Error(ErrorResponse),
     KeyNotFound,
     Pong,
+}
+
+#[derive(Error, Debug, Clone)]
+pub enum ErrorResponse {
+    #[error("validation error")]
+    Validation(String),
+    #[error("internal error")]
+    Internal(String),
 }

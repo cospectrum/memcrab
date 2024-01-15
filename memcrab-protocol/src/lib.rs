@@ -8,8 +8,8 @@ pub(crate) mod mapping;
 
 pub mod io;
 
-pub use err::{ErrorResponse, MemcrabError, ParsingError};
-pub use transport::{ClientSocket, Request, Response, ServerSocket};
+pub use err::{ClientSideError, ParsingError, ServerSideError};
+pub use transport::{ClientSocket, ErrorResponse, Request, Response, ServerSocket};
 
 type ProtocolVersion = u16;
 

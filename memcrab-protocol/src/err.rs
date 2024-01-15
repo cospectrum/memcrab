@@ -1,22 +1,14 @@
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub enum MemcrabError {
+pub enum ClientSideError {
     #[error("io")]
     IO(#[from] std::io::Error),
     #[error("parsing failed")]
     Parsing(#[from] ParsingError),
-    #[error("response error")]
-    ErrorResponse(#[from] ErrorResponse),
 }
 
-#[derive(Error, Debug, Clone)]
-pub enum ErrorResponse {
-    #[error("validation error")]
-    Validation(String),
-    #[error("internal error")]
-    Internal(String),
-}
+pub type ServerSideError = ClientSideError;
 
 #[derive(Error, Debug)]
 pub enum ParsingError {

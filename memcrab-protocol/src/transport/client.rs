@@ -1,11 +1,10 @@
 use crate::{
-    err::ErrorResponse,
     io::{AsyncReader, AsyncWriter},
     mapping::{
-        flags,
+        flags::ResponseFlag,
         tokens::{ErrorHeader, Payload, ResponseHeader},
     },
-    MemcrabError, ParsingError, Request, Response,
+    ClientSideError, ErrorResponse, ParsingError, Request, Response,
 };
 
 #[derive(Debug, Clone)]
@@ -20,7 +19,7 @@ where
     pub fn new(stream: S) -> Self {
         Self { stream }
     }
-    pub async fn make_request(&mut self, request: &Request) -> Result<Response, MemcrabError> {
+    pub async fn make_request(&mut self, request: &Request) -> Result<Response, ClientSideError> {
         let req_bytes = self.encode_request(request);
         self.stream.write_all(&req_bytes).await?;
 
@@ -30,18 +29,18 @@ where
         let payload_chunk = self.stream.read_chunk(header.payload_len()).await?;
         let payload = self.decode_response_payload(header, &payload_chunk)?;
 
-        let resp = self.glue(header, payload)?;
+        let resp = self.glue(header, payload);
         Ok(resp)
     }
-    // TODO: maybe return more general MemcrabError
-    fn glue(&self, header: ResponseHeader, payload: Payload) -> Result<Response, ErrorResponse> {
+    // TODO: maybe return Result to avoid panics
+    fn glue(&self, header: ResponseHeader, payload: Payload) -> Response {
         match header {
-            ResponseHeader::Executed => Ok(Response::Executed),
-            ResponseHeader::Pong => Ok(Response::Pong),
-            ResponseHeader::KeyNotFound => Ok(Response::KeyNotFound),
+            ResponseHeader::Ok => Response::Ok,
+            ResponseHeader::Pong => Response::Pong,
+            ResponseHeader::KeyNotFound => Response::KeyNotFound,
             ResponseHeader::Value { .. } => {
                 match payload {
-                    Payload::Value(v) => Ok(Response::Value(v)),
+                    Payload::Value(v) => Response::Value(v),
                     _ => unreachable!(), // TODO
                 }
             }
@@ -52,8 +51,10 @@ where
                     _ => panic!("invalid payload"), // TODO
                 };
                 match err {
-                    ErrorHeader::Internal { .. } => Err(ErrorResponse::Internal(msg)),
-                    ErrorHeader::Validation { .. } => Err(ErrorResponse::Validation(msg)),
+                    ErrorHeader::Internal { .. } => Response::Error(ErrorResponse::Internal(msg)),
+                    ErrorHeader::Validation { .. } => {
+                        Response::Error(ErrorResponse::Validation(msg))
+                    }
                 }
             }
         }
@@ -62,12 +63,14 @@ where
         todo!()
     }
     fn decode_response_header(&self, h: &[u8]) -> Result<ResponseHeader, ParsingError> {
-        use flags::ResponseStatus as Status;
-
-        let status = Status::try_from(h[0]).map_err(|_| ParsingError::Header)?;
-        match status {
-            Status::Success => todo!(),
-            Status::Error => todo!(),
+        let flag = ResponseFlag::try_from(h[0]).map_err(|_| ParsingError::Header)?;
+        match flag {
+            ResponseFlag::Pong => Ok(ResponseHeader::Pong),
+            ResponseFlag::Ok => Ok(ResponseHeader::Ok),
+            ResponseFlag::KeyNotFound => Ok(ResponseHeader::KeyNotFound),
+            ResponseFlag::Value => todo!(),
+            ResponseFlag::InternalErr => todo!(),
+            ResponseFlag::ValidationErr => todo!(),
         }
     }
     fn decode_response_payload(

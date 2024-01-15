@@ -1,7 +1,10 @@
 use crate::{
     io::{AsyncReader, AsyncWriter},
-    mapping::tokens::{Payload, RequestHeader},
-    MemcrabError, ParsingError, Request, Response,
+    mapping::{
+        flags::RequestFlag,
+        tokens::{Payload, RequestHeader},
+    },
+    ErrorResponse, ParsingError, Request, Response, ServerSideError,
 };
 
 #[derive(Debug, Clone)]
@@ -16,7 +19,7 @@ where
     pub fn new(stream: S) -> Self {
         Self { stream }
     }
-    pub async fn recv_request(&mut self) -> Result<Request, MemcrabError> {
+    pub async fn recv_request(&mut self) -> Result<Request, ServerSideError> {
         let header_chunk = self.stream.read_chunk(RequestHeader::size()).await?;
         let header = self.decode_request_header(&header_chunk)?;
 
@@ -30,7 +33,14 @@ where
         todo!()
     }
     fn decode_request_header(&self, header_chunk: &[u8]) -> Result<RequestHeader, ParsingError> {
-        todo!()
+        let flag = RequestFlag::try_from(header_chunk[0]).map_err(|_| ParsingError::Header)?;
+        match flag {
+            RequestFlag::Ping => Ok(RequestHeader::Ping),
+            RequestFlag::Get => todo!(),
+            RequestFlag::Set => todo!(),
+            RequestFlag::Clear => Ok(RequestHeader::Clear),
+            RequestFlag::Delete => todo!(),
+        }
     }
     fn decode_request_payload(
         &self,
@@ -45,7 +55,7 @@ impl<S> ServerSocket<S>
 where
     S: AsyncReader + AsyncWriter + Send,
 {
-    pub async fn send_response(&mut self, response: &Response) -> Result<(), MemcrabError> {
+    pub async fn send_response(&mut self, response: &Response) -> Result<(), ServerSideError> {
         let response_bytes = self.encode_response(response);
         self.stream.write_all(&response_bytes).await?;
         Ok(())
