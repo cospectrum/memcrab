@@ -3,26 +3,32 @@ use num_enum::{IntoPrimitive, TryFromPrimitive};
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, TryFromPrimitive, IntoPrimitive)]
 pub enum RequestKind {
-    Get = 0,
-    Set = 1,
-    Delete = 2,
-    Clear = 3,
-    Ping = 4,
+    Ping = 0,
+    Get = 1,
+    Set = 2,
+    Delete = 3,
+    Clear = 4,
 }
 
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, TryFromPrimitive, IntoPrimitive)]
-pub enum ResponseKind {
-    Ok = 0,
+pub enum ResponseStatus {
+    Success = 0,
     Error = 1,
-    Value = 2,
-    KeyNotFound = 3,
-    Pong = 4,
 }
 
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, TryFromPrimitive, IntoPrimitive)]
-pub enum ErrorKind {
+pub enum SuccessfulResponse {
+    Pong = 0,
+    Value = 1,
+    Executed = 2,
+    KeyNotFound = 3,
+}
+
+#[repr(u8)]
+#[derive(Debug, Clone, Copy, TryFromPrimitive, IntoPrimitive)]
+pub enum ErrorResponse {
     Validation = 0,
     Internal = 1,
 }
@@ -35,7 +41,7 @@ mod tests {
     fn test() {
         let ok = 0;
         match ok.try_into().unwrap() {
-            ResponseKind::Ok => (),
+            ResponseStatus::Success => (),
             variant => panic!("got unexpected variant: {:?}", variant),
         }
     }

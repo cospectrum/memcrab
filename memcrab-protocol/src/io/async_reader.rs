@@ -1,10 +1,10 @@
 use tokio::io::AsyncReadExt;
 use tokio::net::TcpStream;
 
-use crate::ProtocolError;
+use crate::MemcrabError;
 
 #[async_trait::async_trait]
-pub trait AsyncReader<Err = ProtocolError> {
+pub trait AsyncReader<Err = MemcrabError> {
     async fn read_exact(&mut self, buf: &mut [u8]) -> Result<(), Err>;
 
     async fn read_chunk(&mut self, size: usize) -> Result<Vec<u8>, Err> {
@@ -16,7 +16,7 @@ pub trait AsyncReader<Err = ProtocolError> {
 
 #[async_trait::async_trait]
 impl AsyncReader for TcpStream {
-    async fn read_exact(&mut self, buf: &mut [u8]) -> Result<(), ProtocolError> {
+    async fn read_exact(&mut self, buf: &mut [u8]) -> Result<(), MemcrabError> {
         let n = AsyncReadExt::read_exact(self, buf).await?;
         assert_eq!(n, buf.len());
         Ok(())
@@ -40,7 +40,7 @@ mod tests {
 
     #[async_trait::async_trait]
     impl AsyncReader for MockLinearStream {
-        async fn read_exact(&mut self, buf: &mut [u8]) -> Result<(), ProtocolError> {
+        async fn read_exact(&mut self, buf: &mut [u8]) -> Result<(), MemcrabError> {
             let size = buf.len();
             let v = &self.buf[self.start..self.start + size];
             assert_eq!(v.len(), buf.len());
