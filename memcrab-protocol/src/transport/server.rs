@@ -80,7 +80,13 @@ where
                 })
             }
             RequestFlag::Clear => Ok(RequestHeader::Clear),
-            RequestFlag::Delete => todo!(),
+            RequestFlag::Delete => {
+                let klen_bytes = &header_chunk[..RequestHeader::KLEN_SIZE];
+                let klen = KeyLen::from_be_bytes(
+                    klen_bytes.try_into().expect("klen_bytes len != KLEN_SIZE"),
+                );
+                Ok(RequestHeader::Delete { klen })
+            }
         }
     }
     fn decode_request_payload(
