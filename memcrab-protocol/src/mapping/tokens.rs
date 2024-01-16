@@ -39,7 +39,7 @@ impl RequestHeader {
                 klen,
                 vlen,
                 expiration,
-            } => (klen + vlen + expiration as u64) as usize,
+            } => (klen + vlen) as usize,
             Self::Delete { klen } => klen as usize,
             _ => 0,
         }
