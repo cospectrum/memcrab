@@ -96,17 +96,31 @@ where
     ) -> Result<Payload, ParsingError> {
         match header {
             RequestHeader::Ping => Ok(Payload::Zero),
-            RequestHeader::Version(v) => todo!(),
+            RequestHeader::Version(v) => Ok(Payload::Zero),
             RequestHeader::Delete { klen } => {
-                todo!()
+                let key_bytes = &payload_chunk[..klen as usize];
+                let key =
+                    String::from_utf8(key_bytes.to_vec()).map_err(|_| ParsingError::Payload)?;
+                Ok(Payload::Key(key))
             }
             RequestHeader::Clear => Ok(Payload::Zero),
-            RequestHeader::Get { klen } => todo!(),
+            RequestHeader::Get { klen } => {
+                let key_bytes = &payload_chunk[..klen as usize];
+                let key =
+                    String::from_utf8(key_bytes.to_vec()).map_err(|_| ParsingError::Payload)?;
+                Ok(Payload::Key(key))
+            }
             RequestHeader::Set {
                 klen,
                 vlen,
                 expiration,
-            } => todo!(),
+            } => {
+                let key_bytes = &payload_chunk[..klen as usize];
+                let key =
+                    String::from_utf8(key_bytes.to_vec()).map_err(|_| ParsingError::Payload)?;
+                let value = Vec::from(&payload_chunk[klen as usize..(klen + vlen) as usize]);
+                Ok(Payload::Pair { key, value })
+            }
         }
     }
     pub async fn send_response(&mut self, response: &Response) -> Result<(), ServerSideError> {
