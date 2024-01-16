@@ -1,8 +1,9 @@
 use crate::{
     io::{AsyncReader, AsyncWriter},
     mapping::{
+        alias::{ErrMsgLen, Expiration, KeyLen, ValueLen, Version},
         flags::{RequestFlag, ResponseFlag},
-        tokens::{Expiration, KeyLen, Payload, RequestHeader, ResponseHeader, ValueLen, Version},
+        tokens::{Payload, RequestHeader, ResponseHeader},
     },
     ErrorResponse, ParsingError, Request, Response, ServerSideError,
 };
@@ -23,52 +24,64 @@ where
         let header_chunk = self.stream.read_chunk(RequestHeader::SIZE).await?;
         let header = self.decode_request_header(&header_chunk)?;
 
-        let payload_chunk = self.stream.read_chunk(header.payload_len()).await?;
-        let payload = self.decode_request_payload(header, &payload_chunk)?;
+        let payload_chunk = if header.payload_len() > 0 {
+            self.stream.read_chunk(header.payload_len()).await?
+        } else {
+            vec![]
+        };
+        let payload = self.decode_request_payload(header, payload_chunk)?;
 
         let req = self.construct_request(header, payload);
         Ok(req)
     }
+    pub async fn send_response(&mut self, response: &Response) -> Result<(), ServerSideError> {
+        let response_bytes = self.encode_response(response);
+        self.stream.write_all(&response_bytes).await?;
+        Ok(())
+    }
+
     fn decode_request_header(&self, header_chunk: &[u8]) -> Result<RequestHeader, ParsingError> {
         let flag = RequestFlag::try_from(header_chunk[0]).map_err(|_| ParsingError::Header)?;
         match flag {
             RequestFlag::Version => {
-                let version_bytes = &header_chunk[..RequestHeader::VERSION_SIZE];
+                let version_bytes = &header_chunk[1..1 + RequestHeader::VERSION_SIZE];
                 let version = Version::from_be_bytes(
                     version_bytes
                         .try_into()
-                        .expect("version_bytes len != VERSION_SIZE"),
+                        .expect("version_bytes.len() should be equal to VERSION_SIZE"),
                 );
                 Ok(RequestHeader::Version(version))
             }
             RequestFlag::Ping => Ok(RequestHeader::Ping),
             RequestFlag::Get => {
-                let klen_bytes = &header_chunk[..RequestHeader::KLEN_SIZE];
+                let klen_bytes = &header_chunk[1..1 + RequestHeader::KLEN_SIZE];
                 let klen = KeyLen::from_be_bytes(
-                    klen_bytes.try_into().expect("klen_bytes len != KLEN_SIZE"),
+                    klen_bytes
+                        .try_into()
+                        .expect("klen_bytes.len() should be equal to KLEN_SIZE"),
                 );
                 Ok(RequestHeader::Get { klen })
             }
             RequestFlag::Set => {
-                let mut start = 0;
-                let klen_bytes = &header_chunk[..RequestHeader::KLEN_SIZE];
-                start += RequestHeader::KLEN_SIZE;
-
-                let vlen_bytes = &header_chunk[start..start + RequestHeader::VLEN_SIZE];
-                start += RequestHeader::VLEN_SIZE;
-
-                let expiration_bytes = &header_chunk[start..start + RequestHeader::EXP_SIZE];
+                let tail = &header_chunk[1..];
+                let (klen_bytes, tail) = tail.split_at(RequestHeader::KLEN_SIZE);
+                let (vlen_bytes, tail) = tail.split_at(RequestHeader::VLEN_SIZE);
+                let expiration_bytes = &tail[..RequestHeader::EXP_SIZE];
 
                 let klen = KeyLen::from_be_bytes(
-                    klen_bytes.try_into().expect("klen_bytes len != KLEN_SIZE"),
+                    klen_bytes
+                        .try_into()
+                        .expect("klen_bytes.len() should be equal to KLEN_SIZE"),
                 );
                 let vlen = ValueLen::from_be_bytes(
-                    vlen_bytes.try_into().expect("vlen_bytes len != VLEN_SIZE"),
+                    vlen_bytes
+                        .try_into()
+                        .expect("vlen_bytes.len() should be equal to VLEN_SIZE"),
                 );
                 let expiration = Expiration::from_be_bytes(
                     expiration_bytes
                         .try_into()
-                        .expect("expiration_bytes len != EXP_SIZE"),
+                        .expect("expiration_bytes.len() should be equal to EXP_SIZE"),
                 );
                 Ok(RequestHeader::Set {
                     klen,
@@ -78,9 +91,11 @@ where
             }
             RequestFlag::Clear => Ok(RequestHeader::Clear),
             RequestFlag::Delete => {
-                let klen_bytes = &header_chunk[..RequestHeader::KLEN_SIZE];
+                let klen_bytes = &header_chunk[1..1 + RequestHeader::KLEN_SIZE];
                 let klen = KeyLen::from_be_bytes(
-                    klen_bytes.try_into().expect("klen_bytes len != KLEN_SIZE"),
+                    klen_bytes
+                        .try_into()
+                        .expect("klen_bytes.len() should be equal to KLEN_SIZE"),
                 );
                 Ok(RequestHeader::Delete { klen })
             }
@@ -89,22 +104,20 @@ where
     fn decode_request_payload(
         &self,
         header: RequestHeader,
-        payload_chunk: &[u8],
+        payload_chunk: Vec<u8>,
     ) -> Result<Payload, ParsingError> {
         match header {
             RequestHeader::Ping => Ok(Payload::Zero),
             RequestHeader::Version(v) => Ok(Payload::Zero),
             RequestHeader::Delete { klen } => {
-                let key_bytes = &payload_chunk[..klen as usize];
-                let key =
-                    String::from_utf8(key_bytes.to_vec()).map_err(|_| ParsingError::Payload)?;
+                assert_eq!(klen, payload_chunk.len() as u64);
+                let key = String::from_utf8(payload_chunk).map_err(|_| ParsingError::Payload)?;
                 Ok(Payload::Key(key))
             }
             RequestHeader::Clear => Ok(Payload::Zero),
             RequestHeader::Get { klen } => {
-                let key_bytes = &payload_chunk[..klen as usize];
-                let key =
-                    String::from_utf8(key_bytes.to_vec()).map_err(|_| ParsingError::Payload)?;
+                assert_eq!(klen, payload_chunk.len() as u64);
+                let key = String::from_utf8(payload_chunk).map_err(|_| ParsingError::Payload)?;
                 Ok(Payload::Key(key))
             }
             RequestHeader::Set {
@@ -112,36 +125,33 @@ where
                 vlen,
                 expiration,
             } => {
-                let key_bytes = &payload_chunk[..klen as usize];
-                let key =
-                    String::from_utf8(key_bytes.to_vec()).map_err(|_| ParsingError::Payload)?;
-                let value = Vec::from(&payload_chunk[klen as usize..(klen + vlen) as usize]);
+                let (head, tail) = payload_chunk.split_at(klen.try_into().unwrap());
+                let key = String::from_utf8(head.to_vec()).map_err(|_| ParsingError::Payload)?;
+                let value = tail.to_vec();
                 Ok(Payload::Pair { key, value })
             }
         }
     }
     fn construct_request(&self, header: RequestHeader, payload: Payload) -> Request {
+        use RequestHeader as H;
+
         match (header, payload) {
-            (RequestHeader::Ping, Payload::Zero) => Request::Ping,
-            (RequestHeader::Version(v), Payload::Zero) => Request::Version(v),
-            (RequestHeader::Delete { .. }, Payload::Key(key)) => Request::Delete(key),
-            (RequestHeader::Clear, Payload::Zero) => Request::Clear,
-            (RequestHeader::Get { .. }, Payload::Key(key)) => Request::Get(key),
-            (RequestHeader::Set { expiration, .. }, Payload::Pair { key, value }) => Request::Set {
+            (H::Ping, Payload::Zero) => Request::Ping,
+            (H::Version(v), Payload::Zero) => Request::Version(v),
+            (H::Delete { .. }, Payload::Key(key)) => Request::Delete(key),
+            (H::Clear, Payload::Zero) => Request::Clear,
+            (H::Get { .. }, Payload::Key(key)) => Request::Get(key),
+            (H::Set { expiration, .. }, Payload::Pair { key, value }) => Request::Set {
                 key,
                 value,
                 expiration,
             },
-            (_, _) => unreachable!("invalid pair of header*payload"),
+            tuple => panic!("invalid (header, payload): {:?}", tuple),
         }
-    }
-    pub async fn send_response(&mut self, response: &Response) -> Result<(), ServerSideError> {
-        let response_bytes = self.encode_response(response);
-        self.stream.write_all(&response_bytes).await?;
-        Ok(())
     }
     fn encode_response(&self, response: &Response) -> Vec<u8> {
         let mut bytes = vec![0; ResponseHeader::SIZE];
+
         match response {
             Response::Pong => {
                 bytes[0] = ResponseFlag::Pong.into();
@@ -149,15 +159,38 @@ where
             Response::Ok => {
                 bytes[0] = ResponseFlag::Ok.into();
             }
-            Response::Value(value) => {
-                bytes[0] = ResponseFlag::Value.into();
-                bytes.append(&mut value.to_vec());
-            }
             Response::KeyNotFound => {
                 bytes[0] = ResponseFlag::KeyNotFound.into();
             }
+            Response::Value(value) => {
+                bytes[0] = ResponseFlag::Value.into();
+                let vlen: ValueLen = value.len().try_into().unwrap();
+                for (dst, src) in bytes[1..].iter_mut().zip(vlen.to_be_bytes()) {
+                    *dst = src;
+                }
+                bytes.extend_from_slice(value);
+            }
             Response::Error(err) => {
-                todo!()
+                match err {
+                    ErrorResponse::Internal(msg) => {
+                        bytes[0] = ResponseFlag::InternalErr.into();
+                        let msg = msg.as_bytes();
+                        let msg_len: ErrMsgLen = msg.len().try_into().unwrap();
+                        for (dst, src) in bytes[1..].iter_mut().zip(msg_len.to_be_bytes()) {
+                            *dst = src;
+                        }
+                        bytes.extend_from_slice(msg);
+                    }
+                    ErrorResponse::Validation(msg) => {
+                        bytes[0] = ResponseFlag::ValidationErr.into();
+                        let msg = msg.as_bytes();
+                        let msg_len: ErrMsgLen = msg.len().try_into().unwrap();
+                        for (dst, src) in bytes[1..].iter_mut().zip(msg_len.to_be_bytes()) {
+                            *dst = src;
+                        }
+                        bytes.extend_from_slice(msg);
+                    }
+                };
             }
         }
         bytes
