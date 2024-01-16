@@ -122,13 +122,17 @@ where
     }
     fn construct_request(&self, header: RequestHeader, payload: Payload) -> Request {
         match (header, payload) {
-            (RequestHeader::Ping, Payload::Zero) => todo!(),
-            (RequestHeader::Version(v), Payload::Zero) => todo!(),
-            (RequestHeader::Delete { .. }, Payload::Key(key)) => todo!(),
-            (RequestHeader::Clear, Payload::Zero) => todo!(),
-            (RequestHeader::Get { .. }, Payload::Key(key)) => todo!(),
-            (RequestHeader::Set { expiration, .. }, Payload::Pair { key, value }) => todo!(),
-            (_, _) => todo!(),
+            (RequestHeader::Ping, Payload::Zero) => Request::Ping,
+            (RequestHeader::Version(v), Payload::Zero) => Request::Version(v),
+            (RequestHeader::Delete { .. }, Payload::Key(key)) => Request::Delete(key),
+            (RequestHeader::Clear, Payload::Zero) => Request::Clear,
+            (RequestHeader::Get { .. }, Payload::Key(key)) => Request::Get(key),
+            (RequestHeader::Set { expiration, .. }, Payload::Pair { key, value }) => Request::Set {
+                key,
+                value,
+                expiration,
+            },
+            (_, _) => unreachable!("invalid pair of header*payload"),
         }
     }
     pub async fn send_response(&mut self, response: &Response) -> Result<(), ServerSideError> {

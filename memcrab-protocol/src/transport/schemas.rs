@@ -7,7 +7,7 @@ pub enum Request {
     Get(String),
     Set {
         key: String,
-        val: Vec<u8>,
+        value: Vec<u8>,
         expiration: Expiration,
     },
     Delete(String),
