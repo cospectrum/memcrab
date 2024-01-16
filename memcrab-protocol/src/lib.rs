@@ -1,10 +1,16 @@
-mod channel;
 mod err;
-mod io;
 
-pub mod tokens;
+#[allow(unused)]
+mod transport;
 
-pub use channel::MemcrabChannel;
-pub use err::ProtocolError;
+#[allow(unused)]
+pub(crate) mod mapping;
 
-pub use io::AsyncReader;
+pub mod io;
+
+pub use err::{ClientSideError, ParsingError, ServerSideError};
+pub use transport::{ClientSocket, ErrorResponse, Request, Response, ServerSocket};
+
+type ProtocolVersion = u16;
+
+pub const PROTOCOL_VERSION: ProtocolVersion = 0;
