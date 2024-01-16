@@ -1,8 +1,8 @@
 use crate::{
     io::{AsyncReader, AsyncWriter},
     mapping::{
-        flags::RequestFlag,
-        tokens::{Expiration, KeyLen, Payload, RequestHeader, ValueLen, Version},
+        flags::{RequestFlag, ResponseFlag},
+        tokens::{Expiration, KeyLen, Payload, RequestHeader, ResponseHeader, ValueLen, Version},
     },
     ErrorResponse, ParsingError, Request, Response, ServerSideError,
 };
@@ -141,6 +141,25 @@ where
         Ok(())
     }
     fn encode_response(&self, response: &Response) -> Vec<u8> {
-        todo!()
+        let mut bytes = vec![0; ResponseHeader::SIZE];
+        match response {
+            Response::Pong => {
+                bytes[0] = ResponseFlag::Pong.into();
+            }
+            Response::Ok => {
+                bytes[0] = ResponseFlag::Ok.into();
+            }
+            Response::Value(value) => {
+                bytes[0] = ResponseFlag::Value.into();
+                bytes.append(&mut value.to_vec());
+            }
+            Response::KeyNotFound => {
+                bytes[0] = ResponseFlag::KeyNotFound.into();
+            }
+            Response::Error(err) => {
+                todo!()
+            }
+        }
+        bytes
     }
 }

@@ -50,6 +50,8 @@ impl RequestHeader {
     pub const KLEN_SIZE: usize = size_of::<KeyLen>();
     pub const VLEN_SIZE: usize = size_of::<ValueLen>();
     pub const EXP_SIZE: usize = size_of::<Expiration>();
+
+    // Max size of the request header.
     pub const SIZE: usize = {
         let set_size = Self::KLEN_SIZE + Self::VLEN_SIZE + Self::EXP_SIZE;
         1 + set_size
@@ -73,12 +75,8 @@ impl ResponseHeader {
             _ => 0,
         }
     }
-    pub const fn vlen_size() -> usize {
-        size_of::<ValueLen>()
-    }
-    pub const fn size() -> usize {
-        1 + ErrorHeader::size()
-    }
+    pub const VLEN_SIZE: usize = size_of::<ValueLen>();
+    pub const SIZE: usize = { 1 + ErrorHeader::SIZE };
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -94,9 +92,7 @@ impl ErrorHeader {
             Self::Internal { len } => len,
         }
     }
-    pub const fn size() -> usize {
-        1 + size_of::<ErrMsgLen>()
-    }
+    pub const SIZE: usize = { 1 + size_of::<ErrMsgLen>() };
 }
 
 #[cfg(test)]
