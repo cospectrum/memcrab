@@ -40,7 +40,7 @@ where
                 let version = Version::from_be_bytes(
                     version_bytes
                         .try_into()
-                        .expect("version_bytes should have the length of VERSION_SIZE"),
+                        .expect("version_bytes len != VERSION_SIZE"),
                 );
                 Ok(RequestHeader::Version(version))
             }
@@ -48,9 +48,7 @@ where
             RequestFlag::Get => {
                 let klen_bytes = &header_chunk[..RequestHeader::KLEN_SIZE];
                 let klen = KeyLen::from_be_bytes(
-                    klen_bytes
-                        .try_into()
-                        .expect("klen_bytes should have the length of klen_size()"),
+                    klen_bytes.try_into().expect("klen_bytes len != KLEN_SIZE"),
                 );
                 Ok(RequestHeader::Get { klen })
             }
@@ -62,22 +60,18 @@ where
                 let vlen_bytes = &header_chunk[start..start + RequestHeader::VLEN_SIZE];
                 start += RequestHeader::VLEN_SIZE;
 
-                let expiration_bytes = &header_chunk[start..RequestHeader::EXP_SIZE];
+                let expiration_bytes = &header_chunk[start..start + RequestHeader::EXP_SIZE];
 
                 let klen = KeyLen::from_be_bytes(
-                    klen_bytes
-                        .try_into()
-                        .expect("klen_bytes should have the length of klen_size()"),
+                    klen_bytes.try_into().expect("klen_bytes len != KLEN_SIZE"),
                 );
                 let vlen = ValueLen::from_be_bytes(
-                    vlen_bytes
-                        .try_into()
-                        .expect("vlen_bytes should have the length of vlen_bytes()"),
+                    vlen_bytes.try_into().expect("vlen_bytes len != VLEN_SIZE"),
                 );
                 let expiration = Expiration::from_be_bytes(
                     expiration_bytes
                         .try_into()
-                        .expect("expiration_bytes should have the length of expiration_size()"),
+                        .expect("expiration_bytes len != EXP_SIZE"),
                 );
                 Ok(RequestHeader::Set {
                     klen,
