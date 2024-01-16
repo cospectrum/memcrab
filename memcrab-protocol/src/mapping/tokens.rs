@@ -1,3 +1,4 @@
+use super::alias::{ErrMsgLen, Expiration, KeyLen, ValueLen, Version};
 use std::mem::size_of;
 
 #[derive(Debug)]
@@ -8,12 +9,6 @@ pub enum Payload {
     Pair { key: String, value: Vec<u8> },
     ErrMsg(String),
 }
-
-pub type Version = u16;
-pub type ErrMsgLen = u64;
-pub type KeyLen = u64;
-pub type ValueLen = u64;
-pub type Expiration = u32;
 
 #[derive(Debug, Clone, Copy)]
 pub enum RequestHeader {
@@ -34,6 +29,17 @@ pub enum RequestHeader {
 }
 
 impl RequestHeader {
+    pub const VERSION_SIZE: usize = size_of::<Version>();
+    pub const KLEN_SIZE: usize = size_of::<KeyLen>();
+    pub const VLEN_SIZE: usize = size_of::<ValueLen>();
+    pub const EXP_SIZE: usize = size_of::<Expiration>();
+
+    // Max size of the request header.
+    pub const SIZE: usize = {
+        let set_size = Self::KLEN_SIZE + Self::VLEN_SIZE + Self::EXP_SIZE;
+        1 + set_size
+    };
+
     pub fn payload_len(self) -> usize {
         match self {
             Self::Get { klen } => klen as usize,
@@ -46,16 +52,6 @@ impl RequestHeader {
             _ => 0,
         }
     }
-    pub const VERSION_SIZE: usize = size_of::<Version>();
-    pub const KLEN_SIZE: usize = size_of::<KeyLen>();
-    pub const VLEN_SIZE: usize = size_of::<ValueLen>();
-    pub const EXP_SIZE: usize = size_of::<Expiration>();
-
-    // Max size of the request header.
-    pub const SIZE: usize = {
-        let set_size = Self::KLEN_SIZE + Self::VLEN_SIZE + Self::EXP_SIZE;
-        1 + set_size
-    };
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -68,6 +64,9 @@ pub enum ResponseHeader {
 }
 
 impl ResponseHeader {
+    pub const VLEN_SIZE: usize = size_of::<ValueLen>();
+    pub const SIZE: usize = { 1 + ErrorHeader::SIZE };
+
     pub fn payload_len(self) -> usize {
         match self {
             Self::Error(e) => e.errmsg_len() as usize,
@@ -75,8 +74,6 @@ impl ResponseHeader {
             _ => 0,
         }
     }
-    pub const VLEN_SIZE: usize = size_of::<ValueLen>();
-    pub const SIZE: usize = { 1 + ErrorHeader::SIZE };
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -86,13 +83,15 @@ pub enum ErrorHeader {
 }
 
 impl ErrorHeader {
+    pub const MSG_LEN_SIZE: usize = size_of::<ErrMsgLen>();
+    pub const SIZE: usize = { 1 + size_of::<ErrMsgLen>() };
+
     pub const fn errmsg_len(self) -> ErrMsgLen {
         match self {
             Self::Validation { len } => len,
             Self::Internal { len } => len,
         }
     }
-    pub const SIZE: usize = { 1 + size_of::<ErrMsgLen>() };
 }
 
 #[cfg(test)]

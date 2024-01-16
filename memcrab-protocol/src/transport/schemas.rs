@@ -1,4 +1,4 @@
-use crate::mapping::tokens::{Expiration, Version};
+use crate::mapping::alias::{Expiration, Version};
 use thiserror::Error;
 
 #[derive(Debug, Clone)]
