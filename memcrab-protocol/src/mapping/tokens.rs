@@ -9,6 +9,7 @@ pub enum Payload {
     ErrMsg(String),
 }
 
+pub type Version = u16;
 pub type ErrMsgLen = u64;
 pub type KeyLen = u64;
 pub type ValueLen = u64;
@@ -16,6 +17,7 @@ pub type Expiration = u32;
 
 #[derive(Debug, Clone, Copy)]
 pub enum RequestHeader {
+    Version(Version),
     Get {
         klen: KeyLen,
     },
@@ -39,24 +41,21 @@ impl RequestHeader {
                 klen,
                 vlen,
                 expiration,
-            } => (klen + vlen + expiration as u64) as usize,
+            } => (klen + vlen) as usize,
             Self::Delete { klen } => klen as usize,
             _ => 0,
         }
     }
-    pub const fn klen_size() -> usize {
-        size_of::<KeyLen>()
-    }
-    pub const fn vlen_size() -> usize {
-        size_of::<ValueLen>()
-    }
-    pub const fn expiration_size() -> usize {
-        size_of::<Expiration>()
-    }
-    pub const fn size() -> usize {
-        let set_size = Self::klen_size() + Self::vlen_size() + Self::expiration_size();
+    pub const VERSION_SIZE: usize = size_of::<Version>();
+    pub const KLEN_SIZE: usize = size_of::<KeyLen>();
+    pub const VLEN_SIZE: usize = size_of::<ValueLen>();
+    pub const EXP_SIZE: usize = size_of::<Expiration>();
+
+    // Max size of the request header.
+    pub const SIZE: usize = {
+        let set_size = Self::KLEN_SIZE + Self::VLEN_SIZE + Self::EXP_SIZE;
         1 + set_size
-    }
+    };
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -76,12 +75,8 @@ impl ResponseHeader {
             _ => 0,
         }
     }
-    pub const fn vlen_size() -> usize {
-        size_of::<ValueLen>()
-    }
-    pub const fn size() -> usize {
-        1 + ErrorHeader::size()
-    }
+    pub const VLEN_SIZE: usize = size_of::<ValueLen>();
+    pub const SIZE: usize = { 1 + ErrorHeader::SIZE };
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -97,9 +92,7 @@ impl ErrorHeader {
             Self::Internal { len } => len,
         }
     }
-    pub const fn size() -> usize {
-        1 + size_of::<ErrMsgLen>()
-    }
+    pub const SIZE: usize = { 1 + size_of::<ErrMsgLen>() };
 }
 
 #[cfg(test)]

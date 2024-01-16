@@ -23,7 +23,7 @@ where
         let req_bytes = self.encode_request(request);
         self.stream.write_all(&req_bytes).await?;
 
-        let header_chunk = self.stream.read_chunk(ResponseHeader::size()).await?;
+        let header_chunk = self.stream.read_chunk(ResponseHeader::SIZE).await?;
         let header = self.decode_response_header(&header_chunk)?;
 
         let payload_chunk = self.stream.read_chunk(header.payload_len()).await?;
