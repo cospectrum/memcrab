@@ -46,22 +46,14 @@ impl RequestHeader {
             _ => 0,
         }
     }
-    pub const fn version_size() -> usize {
-        size_of::<Version>()
-    }
-    pub const fn klen_size() -> usize {
-        size_of::<KeyLen>()
-    }
-    pub const fn vlen_size() -> usize {
-        size_of::<ValueLen>()
-    }
-    pub const fn expiration_size() -> usize {
-        size_of::<Expiration>()
-    }
-    pub const fn size() -> usize {
-        let set_size = Self::klen_size() + Self::vlen_size() + Self::expiration_size();
+    pub const VERSION_SIZE: usize = size_of::<Version>();
+    pub const KLEN_SIZE: usize = size_of::<KeyLen>();
+    pub const VLEN_SIZE: usize = size_of::<ValueLen>();
+    pub const EXP_SIZE: usize = size_of::<Expiration>();
+    pub const SIZE: usize = {
+        let set_size = Self::KLEN_SIZE + Self::VLEN_SIZE + Self::EXP_SIZE;
         1 + set_size
-    }
+    };
 }
 
 #[derive(Debug, Clone, Copy)]

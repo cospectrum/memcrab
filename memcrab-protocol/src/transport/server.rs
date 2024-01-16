@@ -2,7 +2,7 @@ use crate::{
     io::{AsyncReader, AsyncWriter},
     mapping::{
         flags::RequestFlag,
-        tokens::{Payload, RequestHeader, Version},
+        tokens::{Expiration, KeyLen, Payload, RequestHeader, ValueLen, Version},
     },
     ErrorResponse, ParsingError, Request, Response, ServerSideError,
 };
@@ -20,7 +20,7 @@ where
         Self { stream }
     }
     pub async fn recv_request(&mut self) -> Result<Request, ServerSideError> {
-        let header_chunk = self.stream.read_chunk(RequestHeader::size()).await?;
+        let header_chunk = self.stream.read_chunk(RequestHeader::SIZE).await?;
         let header = self.decode_request_header(&header_chunk)?;
 
         let payload_chunk = self.stream.read_chunk(header.payload_len()).await?;
@@ -36,17 +36,55 @@ where
         let flag = RequestFlag::try_from(header_chunk[0]).map_err(|_| ParsingError::Header)?;
         match flag {
             RequestFlag::Version => {
-                let version_bytes = &header_chunk[..RequestHeader::version_size()];
+                let version_bytes = &header_chunk[..RequestHeader::VERSION_SIZE];
                 let version = Version::from_be_bytes(
                     version_bytes
                         .try_into()
-                        .expect("version_bytes should have the length of version_size()"),
+                        .expect("version_bytes should have the length of VERSION_SIZE"),
                 );
                 Ok(RequestHeader::Version(version))
             }
             RequestFlag::Ping => Ok(RequestHeader::Ping),
-            RequestFlag::Get => todo!(),
-            RequestFlag::Set => todo!(),
+            RequestFlag::Get => {
+                let klen_bytes = &header_chunk[..RequestHeader::KLEN_SIZE];
+                let klen = KeyLen::from_be_bytes(
+                    klen_bytes
+                        .try_into()
+                        .expect("klen_bytes should have the length of klen_size()"),
+                );
+                Ok(RequestHeader::Get { klen })
+            }
+            RequestFlag::Set => {
+                let mut start = 0;
+                let klen_bytes = &header_chunk[..RequestHeader::KLEN_SIZE];
+                start += RequestHeader::KLEN_SIZE;
+
+                let vlen_bytes = &header_chunk[start..start + RequestHeader::VLEN_SIZE];
+                start += RequestHeader::VLEN_SIZE;
+
+                let expiration_bytes = &header_chunk[start..RequestHeader::EXP_SIZE];
+
+                let klen = KeyLen::from_be_bytes(
+                    klen_bytes
+                        .try_into()
+                        .expect("klen_bytes should have the length of klen_size()"),
+                );
+                let vlen = ValueLen::from_be_bytes(
+                    vlen_bytes
+                        .try_into()
+                        .expect("vlen_bytes should have the length of vlen_bytes()"),
+                );
+                let expiration = Expiration::from_be_bytes(
+                    expiration_bytes
+                        .try_into()
+                        .expect("expiration_bytes should have the length of expiration_size()"),
+                );
+                Ok(RequestHeader::Set {
+                    klen,
+                    vlen,
+                    expiration,
+                })
+            }
             RequestFlag::Clear => Ok(RequestHeader::Clear),
             RequestFlag::Delete => todo!(),
         }
