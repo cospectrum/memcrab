@@ -38,7 +38,9 @@ where
             RequestFlag::Version => {
                 let version_bytes = &header_chunk[..RequestHeader::version_size()];
                 let version = Version::from_be_bytes(
-                    version_bytes.try_into().map_err(|_| ParsingError::Header)?,
+                    version_bytes
+                        .try_into()
+                        .expect("version_bytes should have the length of version_size()"),
                 );
                 Ok(RequestHeader::Version(version))
             }
