@@ -26,11 +26,8 @@ where
         let payload_chunk = self.stream.read_chunk(header.payload_len()).await?;
         let payload = self.decode_request_payload(header, &payload_chunk)?;
 
-        let req = self.glue(header, payload);
+        let req = self.construct_request(header, payload);
         Ok(req)
-    }
-    fn glue(&self, header: RequestHeader, payload: Payload) -> Request {
-        todo!()
     }
     fn decode_request_header(&self, header_chunk: &[u8]) -> Result<RequestHeader, ParsingError> {
         let flag = RequestFlag::try_from(header_chunk[0]).map_err(|_| ParsingError::Header)?;
@@ -121,6 +118,17 @@ where
                 let value = Vec::from(&payload_chunk[klen as usize..(klen + vlen) as usize]);
                 Ok(Payload::Pair { key, value })
             }
+        }
+    }
+    fn construct_request(&self, header: RequestHeader, payload: Payload) -> Request {
+        match (header, payload) {
+            (RequestHeader::Ping, Payload::Zero) => todo!(),
+            (RequestHeader::Version(v), Payload::Zero) => todo!(),
+            (RequestHeader::Delete { .. }, Payload::Key(key)) => todo!(),
+            (RequestHeader::Clear, Payload::Zero) => todo!(),
+            (RequestHeader::Get { .. }, Payload::Key(key)) => todo!(),
+            (RequestHeader::Set { expiration, .. }, Payload::Pair { key, value }) => todo!(),
+            (_, _) => todo!(),
         }
     }
     pub async fn send_response(&mut self, response: &Response) -> Result<(), ServerSideError> {
