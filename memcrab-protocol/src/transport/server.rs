@@ -35,6 +35,7 @@ where
     fn decode_request_header(&self, header_chunk: &[u8]) -> Result<RequestHeader, ParsingError> {
         let flag = RequestFlag::try_from(header_chunk[0]).map_err(|_| ParsingError::Header)?;
         match flag {
+            RequestFlag::Version => todo!(),
             RequestFlag::Ping => Ok(RequestHeader::Ping),
             RequestFlag::Get => todo!(),
             RequestFlag::Set => todo!(),

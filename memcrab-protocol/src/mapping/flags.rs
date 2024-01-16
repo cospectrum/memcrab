@@ -3,11 +3,12 @@ use num_enum::{IntoPrimitive, TryFromPrimitive};
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, TryFromPrimitive, IntoPrimitive)]
 pub enum RequestFlag {
-    Ping = 0,
-    Get = 1,
-    Set = 2,
-    Delete = 3,
-    Clear = 4,
+    Version = 0,
+    Ping = 1,
+    Get = 2,
+    Set = 3,
+    Delete = 4,
+    Clear = 5,
 }
 
 #[repr(u8)]

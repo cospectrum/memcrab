@@ -9,6 +9,7 @@ pub enum Payload {
     ErrMsg(String),
 }
 
+pub type Version = u16;
 pub type ErrMsgLen = u64;
 pub type KeyLen = u64;
 pub type ValueLen = u64;
@@ -16,6 +17,7 @@ pub type Expiration = u32;
 
 #[derive(Debug, Clone, Copy)]
 pub enum RequestHeader {
+    Version(Version),
     Get {
         klen: KeyLen,
     },
@@ -43,6 +45,9 @@ impl RequestHeader {
             Self::Delete { klen } => klen as usize,
             _ => 0,
         }
+    }
+    pub const fn version_size() -> usize {
+        size_of::<Version>()
     }
     pub const fn klen_size() -> usize {
         size_of::<KeyLen>()

@@ -1,12 +1,14 @@
+use crate::mapping::tokens::{Expiration, Version};
 use thiserror::Error;
 
 #[derive(Debug, Clone)]
 pub enum Request {
+    Version(Version),
     Get(String),
     Set {
         key: String,
         val: Vec<u8>,
-        expiration: u32,
+        expiration: Expiration,
     },
     Delete(String),
     Clear,
