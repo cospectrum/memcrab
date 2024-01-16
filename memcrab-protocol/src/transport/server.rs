@@ -56,12 +56,6 @@ where
     ) -> Result<Payload, ParsingError> {
         todo!()
     }
-}
-
-impl<S> ServerSocket<S>
-where
-    S: AsyncReader + AsyncWriter + Send,
-{
     pub async fn send_response(&mut self, response: &Response) -> Result<(), ServerSideError> {
         let response_bytes = self.encode_response(response);
         self.stream.write_all(&response_bytes).await?;
