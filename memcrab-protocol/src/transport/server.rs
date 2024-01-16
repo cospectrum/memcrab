@@ -2,7 +2,7 @@ use crate::{
     io::{AsyncReader, AsyncWriter},
     mapping::{
         flags::RequestFlag,
-        tokens::{Payload, RequestHeader},
+        tokens::{Payload, RequestHeader, Version},
     },
     ErrorResponse, ParsingError, Request, Response, ServerSideError,
 };
@@ -35,7 +35,13 @@ where
     fn decode_request_header(&self, header_chunk: &[u8]) -> Result<RequestHeader, ParsingError> {
         let flag = RequestFlag::try_from(header_chunk[0]).map_err(|_| ParsingError::Header)?;
         match flag {
-            RequestFlag::Version => todo!(),
+            RequestFlag::Version => {
+                let version_bytes = &header_chunk[..RequestHeader::version_size()];
+                let version = Version::from_be_bytes(
+                    version_bytes.try_into().map_err(|_| ParsingError::Header)?,
+                );
+                Ok(RequestHeader::Version(version))
+            }
             RequestFlag::Ping => Ok(RequestHeader::Ping),
             RequestFlag::Get => todo!(),
             RequestFlag::Set => todo!(),
