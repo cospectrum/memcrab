@@ -94,7 +94,20 @@ where
         header: RequestHeader,
         payload_chunk: &[u8],
     ) -> Result<Payload, ParsingError> {
-        todo!()
+        match header {
+            RequestHeader::Ping => Ok(Payload::Zero),
+            RequestHeader::Version(v) => todo!(),
+            RequestHeader::Delete { klen } => {
+                todo!()
+            }
+            RequestHeader::Clear => Ok(Payload::Zero),
+            RequestHeader::Get { klen } => todo!(),
+            RequestHeader::Set {
+                klen,
+                vlen,
+                expiration,
+            } => todo!(),
+        }
     }
     pub async fn send_response(&mut self, response: &Response) -> Result<(), ServerSideError> {
         let response_bytes = self.encode_response(response);
