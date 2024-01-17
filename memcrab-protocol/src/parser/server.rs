@@ -3,17 +3,16 @@ use crate::{
     mapping::{
         alias::{ErrMsgLen, Expiration, KeyLen, ValueLen, Version},
         flags::{RequestKind, ResponseFlag},
-        tokens::{Payload, RequestHeader, ResponseHeader},
+        sizes,
     },
-    ErrorResponse, ParsingError, Request, Response, ServerSideError,
+    parser::err::{Error, ParseError},
+    ErrorResponse, Request, Response,
 };
 
 #[derive(Debug, Clone)]
 pub struct ServerSocket<S> {
     stream: S,
 }
-
-pub struct ParseError(String);
 
 impl<S> ServerSocket<S>
 where
@@ -23,15 +22,10 @@ where
         Self { stream }
     }
 
-    pub async fn read_request(&mut self) -> Result<Request, ParseError> {
-        let buf = self
-            .stream
-            .read_chunk(RequestHeader::SIZE)
-            .await
-            .map_err(|e| ParseError("Cannot read data from socket".to_string()))?;
+    pub async fn read_request(&mut self) -> Result<Request, Error> {
+        let buf = self.stream.read_chunk(sizes::REQUEST_MAX_SIZE).await?;
 
-        let kind = RequestKind::try_from(buf[0])
-            .map_err(|_| ParseError("Invalid request kind".to_string()))?;
+        let kind = RequestKind::try_from(buf[0]).map_err(|_| ParseError::InvalidKind)?;
         use RequestKind::*;
         Ok(match kind {
             Version => {
@@ -41,14 +35,14 @@ where
             Ping => Request::Ping,
             Get => {
                 let klen = self.parse_get_header(&buf)?;
-                let key_bytes = self.stream.read_chunk(klen as usize).await.unwrap();
+                let key_bytes = self.stream.read_chunk(klen as usize).await?;
                 let key = Self::parse_utf8(key_bytes)?;
-
                 Request::Get(key)
             }
             Set => {
                 let (klen, vlen, expiration) = self.parse_set_header(&buf)?;
-                let buf = self.stream.read_chunk(klen as usize).await.unwrap();
+                let payload_size = klen as usize + vlen as usize;
+                let buf = self.stream.read_chunk(payload_size).await?;
                 let (key, value) = buf.split_at(klen as usize);
                 let (key, value) = (Self::parse_utf8(key.to_vec())?, value.to_vec());
                 Request::Set {
@@ -68,8 +62,8 @@ where
         })
     }
 
-    fn parse_version_header(&mut self, header: &[u8]) -> Result<Version, ParseError> {
-        let version_bytes = &header[..RequestHeader::VERSION_SIZE];
+    fn parse_version_header(&mut self, header: &[u8]) -> Result<Version, Error> {
+        let version_bytes = &header[..sizes::REQUEST_VERSION_SIZE];
         let version = Version::from_be_bytes(
             version_bytes
                 .try_into()
@@ -78,8 +72,8 @@ where
         Ok(version)
     }
 
-    fn parse_get_header(&mut self, header: &[u8]) -> Result<KeyLen, ParseError> {
-        let klen_bytes = &header[..RequestHeader::KLEN_SIZE];
+    fn parse_get_header(&mut self, header: &[u8]) -> Result<KeyLen, Error> {
+        let klen_bytes = &header[..sizes::REQUEST_KLEN_SIZE];
         let klen = KeyLen::from_be_bytes(
             klen_bytes
                 .try_into()
@@ -88,14 +82,11 @@ where
         Ok(klen)
     }
 
-    fn parse_set_header(
-        &mut self,
-        header: &[u8],
-    ) -> Result<(KeyLen, ValueLen, Expiration), ParseError> {
+    fn parse_set_header(&mut self, header: &[u8]) -> Result<(KeyLen, ValueLen, Expiration), Error> {
         let rest = &header[1..];
-        let (klen_bytes, rest) = rest.split_at(RequestHeader::KLEN_SIZE);
-        let (vlen_bytes, rest) = rest.split_at(RequestHeader::VLEN_SIZE);
-        let expiration_bytes = &rest[..RequestHeader::EXP_SIZE];
+        let (klen_bytes, rest) = rest.split_at(sizes::REQUEST_KLEN_SIZE);
+        let (vlen_bytes, rest) = rest.split_at(sizes::REQUEST_VLEN_SIZE);
+        let expiration_bytes = &rest[..sizes::REQUEST_EXP_SIZE];
 
         let klen = KeyLen::from_be_bytes(
             klen_bytes
@@ -116,18 +107,18 @@ where
         Ok((klen, vlen, expiration))
     }
 
-    fn parse_utf8(buf: Vec<u8>) -> Result<String, ParseError> {
-        String::from_utf8(buf).map_err(|_| ParseError("Invalid string for key".to_string()))
+    fn parse_utf8(buf: Vec<u8>) -> Result<String, Error> {
+        Ok(String::from_utf8(buf).map_err(|_| ParseError::InvalidString)?)
     }
 
-    pub async fn send_response(&mut self, response: &Response) -> Result<(), ServerSideError> {
+    pub async fn send_response(&mut self, response: &Response) -> Result<(), Error> {
         let response_bytes = self.encode_response(response);
         self.stream.write_all(&response_bytes).await?;
         Ok(())
     }
 
     fn encode_response(&self, response: &Response) -> Vec<u8> {
-        let mut bytes = vec![0; ResponseHeader::SIZE];
+        let mut bytes = vec![0; sizes::REQUEST_MAX_SIZE];
 
         match response {
             Response::Pong => {
