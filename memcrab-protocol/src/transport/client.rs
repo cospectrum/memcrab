@@ -20,7 +20,7 @@ where
     pub fn new(stream: S) -> Self {
         Self { stream }
     }
-    pub async fn make_request(&mut self, request: &Request) -> Result<Response, ClientSideError> {
+    pub async fn make_request(&mut self, request: Request) -> Result<Response, ClientSideError> {
         let req_bytes = self.encode_request(request);
         self.stream.write_all(&req_bytes).await?;
 
@@ -62,7 +62,7 @@ where
             }
         }
     }
-    fn encode_request(&self, request: &Request) -> Vec<u8> {
+    fn encode_request(&self, request: Request) -> Vec<u8> {
         let mut bytes = vec![0; RequestHeader::SIZE];
         match request {
             Request::Ping => {
@@ -119,7 +119,7 @@ where
                     *dst = src;
                 }
                 bytes.extend_from_slice(key);
-                bytes.extend_from_slice(value);
+                bytes.extend_from_slice(&value);
             }
         }
         bytes
