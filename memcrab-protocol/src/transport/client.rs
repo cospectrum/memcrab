@@ -2,7 +2,7 @@ use crate::{
     io::{AsyncReader, AsyncWriter},
     mapping::{
         alias::{ErrMsgLen, Expiration, KeyLen, ValueLen},
-        flags::{RequestFlag, ResponseFlag},
+        flags::{RequestKind, ResponseFlag},
         tokens::{ErrorHeader, Payload, RequestHeader, ResponseHeader},
     },
     ClientSideError, ErrorResponse, ParsingError, Request, Response,
@@ -66,19 +66,19 @@ where
         let mut bytes = vec![0; RequestHeader::SIZE];
         match request {
             Request::Ping => {
-                bytes[0] = RequestFlag::Ping.into();
+                bytes[0] = RequestKind::Ping.into();
             }
             Request::Clear => {
-                bytes[0] = RequestFlag::Clear.into();
+                bytes[0] = RequestKind::Clear.into();
             }
             Request::Version(v) => {
-                bytes[0] = RequestFlag::Version.into();
+                bytes[0] = RequestKind::Version.into();
                 let [a, b] = v.to_be_bytes();
                 bytes[1] = a;
                 bytes[2] = b;
             }
             Request::Get(key) => {
-                bytes[0] = RequestFlag::Get.into();
+                bytes[0] = RequestKind::Get.into();
                 let key = key.as_bytes();
                 let klen: KeyLen = key.len().try_into().unwrap();
 
@@ -88,7 +88,7 @@ where
                 bytes.extend_from_slice(key);
             }
             Request::Delete(key) => {
-                bytes[0] = RequestFlag::Delete.into();
+                bytes[0] = RequestKind::Delete.into();
                 let key = key.as_bytes();
                 let klen: KeyLen = key.len().try_into().unwrap();
 
@@ -102,7 +102,7 @@ where
                 value,
                 expiration,
             } => {
-                bytes[0] = RequestFlag::Set.into();
+                bytes[0] = RequestKind::Set.into();
                 let key = key.as_bytes();
                 let klen: KeyLen = key.len().try_into().unwrap();
                 let vlen: ValueLen = value.len().try_into().unwrap();

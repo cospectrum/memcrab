@@ -2,7 +2,7 @@ use num_enum::{IntoPrimitive, TryFromPrimitive};
 
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, TryFromPrimitive, IntoPrimitive)]
-pub enum RequestFlag {
+pub enum RequestKind {
     Version = 0,
     Ping = 1,
     Get = 2,
