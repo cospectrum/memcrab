@@ -1,19 +1,22 @@
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub enum ClientSideError {
+pub enum Error {
     #[error("io")]
     IO(#[from] std::io::Error),
-    #[error("parsing failed")]
-    Parsing(#[from] ParsingError),
+
+    #[error("cannot parse message")]
+    Parse(#[from] ParseError),
 }
 
-pub type ServerSideError = ClientSideError;
-
 #[derive(Error, Debug)]
-pub enum ParsingError {
-    #[error("invalid header")]
-    Header,
-    #[error("invalid payload")]
-    Payload,
+pub enum ParseError {
+    #[error("invalid message kind")]
+    UnknownKind,
+
+    #[error("malformed string")]
+    InvalidString,
+
+    #[error("message is too big")]
+    TooBig,
 }
