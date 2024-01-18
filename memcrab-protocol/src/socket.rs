@@ -3,8 +3,7 @@ use crate::{
     err::{Error, ParseError},
     kind::MessageKind,
     message::{Message, Request, Response},
-    sizes,
-    stream::{AsyncReader, AsyncWriter},
+    sizes, AsyncReader, AsyncWriter,
 };
 
 /// Wraps a stream (typically TCPStream) for receiving/sending framed messages according to memcrab
@@ -102,7 +101,7 @@ where
             }
             Message::Request(Request::Set {
                 key,
-                mut value,
+                value,
                 expiration,
             }) => {
                 bytes.push(MessageKind::SetRequest.into());
@@ -110,7 +109,7 @@ where
                 bytes.extend_from_slice(&value.len().to_be_bytes());
                 bytes.extend_from_slice(&expiration.to_be_bytes());
                 bytes.extend_from_slice(key.as_bytes());
-                bytes.append(&mut value);
+                bytes.extend(value);
             }
             Message::Request(Request::Delete(key)) => {
                 bytes.push(MessageKind::DeleteRequest.into());
@@ -123,15 +122,15 @@ where
             Message::Response(Response::Error(msg)) => {
                 bytes.push(MessageKind::ErrorResponse.into());
                 bytes.extend_from_slice(&msg.len().to_be_bytes());
-                bytes.append(&mut msg.into_bytes());
+                bytes.extend_from_slice(msg.as_bytes());
             }
             Message::Response(Response::Pong) => {
                 bytes.push(MessageKind::PongResponse.into());
             }
-            Message::Response(Response::Value(mut value)) => {
+            Message::Response(Response::Value(value)) => {
                 bytes.push(MessageKind::ValueResponse.into());
                 bytes.extend_from_slice(&value.len().to_be_bytes());
-                bytes.append(&mut value);
+                bytes.extend_from_slice(&value);
             }
             Message::Response(Response::KeyNotFound) => {
                 bytes.push(MessageKind::KeyNotFoundResponse.into());
@@ -265,26 +264,26 @@ mod test {
         // TODO!: tests for encoding
 
         data = vec![0];
-        data.append(&mut vec![0, 1]);
-        data.append(&mut vec![0; 18]);
+        data.extend(vec![0, 1]);
+        data.extend(vec![0; 18]);
         assert_parsed(data, Message::Request(Request::Version(1))).await;
 
         data = vec![1];
-        data.append(&mut vec![0; 20]);
+        data.extend(vec![0; 20]);
         assert_parsed(data, Message::Request(Request::Ping)).await;
 
         data = vec![2];
-        data.append(&mut vec![0, 0, 0, 0, 0, 0, 0, 2]); // klen
-        data.append(&mut vec![0; 12]); // rest of header
-        data.append(&mut vec![97, 98]); // utf8 encoded key
+        data.extend(vec![0, 0, 0, 0, 0, 0, 0, 2]); // klen
+        data.extend(vec![0; 12]); // rest of header
+        data.extend(vec![97, 98]); // utf8 encoded key
         assert_parsed(data, Message::Request(Request::Get("ab".to_owned()))).await;
 
         data = vec![3];
-        data.append(&mut vec![0, 0, 0, 0, 0, 0, 0, 2]); // klen
-        data.append(&mut vec![0, 0, 0, 0, 0, 0, 0, 3]); // vlen
-        data.append(&mut vec![0, 0, 1, 0]); // exp
-        data.append(&mut vec![97, 98]); // utf8 encoded key
-        data.append(&mut vec![1, 2, 3]); // value
+        data.extend(vec![0, 0, 0, 0, 0, 0, 0, 2]); // klen
+        data.extend(vec![0, 0, 0, 0, 0, 0, 0, 3]); // vlen
+        data.extend(vec![0, 0, 1, 0]); // exp
+        data.extend(vec![97, 98]); // utf8 encoded key
+        data.extend(vec![1, 2, 3]); // value
         assert_parsed(
             data,
             Message::Request(Request::Set {
@@ -296,37 +295,37 @@ mod test {
         .await;
 
         data = vec![4];
-        data.append(&mut vec![0, 0, 0, 0, 0, 0, 0, 2]); // klen
-        data.append(&mut vec![0; 12]); // rest of header
-        data.append(&mut vec![97, 98]); // utf8 encoded key
+        data.extend(vec![0, 0, 0, 0, 0, 0, 0, 2]); // klen
+        data.extend(vec![0; 12]); // rest of header
+        data.extend(vec![97, 98]); // utf8 encoded key
         assert_parsed(data, Message::Request(Request::Delete("ab".to_owned()))).await;
 
         data = vec![5];
-        data.append(&mut vec![0; 20]);
+        data.extend(vec![0; 20]);
         assert_parsed(data, Message::Request(Request::Clear)).await;
 
         data = vec![128];
-        data.append(&mut vec![0; 20]);
+        data.extend(vec![0; 20]);
         assert_parsed(data, Message::Response(Response::Pong)).await;
 
         data = vec![129];
-        data.append(&mut vec![0; 20]);
+        data.extend(vec![0; 20]);
         assert_parsed(data, Message::Response(Response::Ok)).await;
 
         data = vec![130];
-        data.append(&mut vec![0, 0, 0, 0, 0, 0, 0, 4]); // vlen
-        data.append(&mut vec![0; 12]); // rest of header
-        data.append(&mut vec![1, 2, 3, 4]); // msg
+        data.extend(vec![0, 0, 0, 0, 0, 0, 0, 4]); // vlen
+        data.extend(vec![0; 12]); // rest of header
+        data.extend(vec![1, 2, 3, 4]); // msg
         assert_parsed(data, Message::Response(Response::Value(vec![1, 2, 3, 4]))).await;
 
         data = vec![131];
-        data.append(&mut vec![0; 20]);
+        data.extend(vec![0; 20]);
         assert_parsed(data, Message::Response(Response::KeyNotFound)).await;
 
         data = vec![132];
-        data.append(&mut vec![0, 0, 0, 0, 0, 0, 0, 3]); // vlen
-        data.append(&mut vec![0; 12]); // rest of header
-        data.append(&mut vec![101, 114, 114]); // msg
+        data.extend(vec![0, 0, 0, 0, 0, 0, 0, 3]); // vlen
+        data.extend(vec![0; 12]); // rest of header
+        data.extend(vec![101, 114, 114]); // msg
         assert_parsed(data, Message::Response(Response::Error("err".to_owned()))).await;
     }
 }
