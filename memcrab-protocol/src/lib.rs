@@ -1,13 +1,14 @@
-mod parser;
+mod alias;
+mod err;
+mod kind;
+mod message;
+mod sizes;
+mod socket;
+mod stream;
+mod version;
 
-#[allow(unused)]
-pub(crate) mod mapping;
-
-pub mod io;
-
-use mapping::alias::Version;
-
-pub use parser::{Error, ParseError};
-pub use parser::{ErrorResponse, Request, Response, ServerSocket};
-
-pub const PROTOCOL_VERSION: Version = 0;
+pub use err::{Error, ParseError};
+pub use message::{Message, Request, Response};
+pub use socket::Socket;
+pub use stream::{AsyncReader, AsyncWriter};
+pub use version::VERSION;
