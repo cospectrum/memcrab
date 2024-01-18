@@ -1,7 +1,7 @@
 use crate::mapping::alias::{Expiration, Version};
 use thiserror::Error;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Request {
     Version(Version),
     Get(String),
@@ -15,7 +15,7 @@ pub enum Request {
     Ping,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Response {
     Value(Vec<u8>),
     Ok,
@@ -24,7 +24,7 @@ pub enum Response {
     Pong,
 }
 
-#[derive(Error, Debug, Clone)]
+#[derive(Error, Debug, Clone, PartialEq, Eq)]
 pub enum ErrorResponse {
     #[error("validation error")]
     Validation(String),

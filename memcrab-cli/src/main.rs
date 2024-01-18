@@ -3,7 +3,6 @@ use clap::Parser;
 use core::num::NonZeroUsize;
 use memcrab::RawClient;
 use memcrab_cache::Cache;
-use memcrab_server::start_grpc_server;
 use rustyline::error::ReadlineError;
 use rustyline::DefaultEditor;
 
@@ -21,7 +20,8 @@ struct Cli {
 }
 
 async fn eval_lines(addr: String) -> anyhow::Result<()> {
-    let mut client = RawClient::connect(format!("http://{}", addr)).await?;
+    let addr = addr.parse()?;
+    let mut client = RawClient::connect(addr).await?;
     let mut editor = DefaultEditor::new()?;
     loop {
         let line = editor.readline("memcrab> ");
@@ -82,12 +82,13 @@ async fn eval_line(client: &mut RawClient, line: String) -> anyhow::Result<()> {
     Ok(())
 }
 
+#[allow(unused)]
 async fn serve(addr: String) -> anyhow::Result<()> {
     let maxbytes = 100_000;
     let maxlen = NonZeroUsize::new(110).unwrap();
     let cache = Cache::new(maxlen, maxbytes);
 
-    start_grpc_server(addr.parse()?, cache).await.unwrap();
+    todo!("server is not implemented");
     Ok(())
 }
 

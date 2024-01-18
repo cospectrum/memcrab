@@ -15,7 +15,5 @@ anyhow = "1.0.79"
 clap = { version = "4.4.12", features = ["derive"] }
 memcrab = { version = "0.1.0", path = "../memcrab" }
 memcrab-cache = { version = "0.1.0", path = "../memcrab-cache" }
-memcrab-server = { version = "0.1.0", path = "../memcrab-server" }
 rustyline = "13.0.0"
 tokio = { version = "1.35.1", features = ["full"] }
-tonic.workspace = true
