@@ -12,7 +12,7 @@ pub enum Error {
 #[derive(Error, Debug)]
 pub enum ParseError {
     #[error("invalid message kind")]
-    UnknownKind,
+    UnknownMsgKind,
 
     #[error("malformed string")]
     InvalidString,

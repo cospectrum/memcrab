@@ -25,7 +25,7 @@ where
     pub async fn receive(&mut self) -> Result<Message, Error> {
         let header = self.stream.read_chunk(sizes::MAX_HEADER_SIZE).await?;
 
-        let kind = MessageKind::try_from(header[0]).map_err(|_| ParseError::UnknownKind)?;
+        let kind = MessageKind::try_from(header[0]).map_err(|_| ParseError::UnknownMsgKind)?;
         use MessageKind as Kind;
         Ok(match kind {
             Kind::VersionRequest => {
@@ -219,15 +219,16 @@ mod test {
     #[async_trait::async_trait]
     impl AsyncReader for MockStream {
         async fn read_exact(&mut self, buf: &mut [u8]) -> Result<(), std::io::Error> {
-            for byte in buf.iter_mut() {
+            use std::io::{Error, ErrorKind};
+
+            for (at, byte) in buf.iter_mut().enumerate() {
                 if self.read_data.is_empty() {
-                    return Err(std::io::Error::new(
-                        std::io::ErrorKind::UnexpectedEof,
-                        format!(
-                            "read_exact: cannot completely fill buffer, stopped at: buf={:?}",
-                            buf
-                        ),
-                    ));
+                    let msg = format!(
+                        "read_exact: cannot completely fill buffer with len={}, stopped at {}",
+                        buf.len(),
+                        at,
+                    );
+                    return Err(Error::new(ErrorKind::UnexpectedEof, msg));
                 }
                 *byte = self.read_data.pop_front().unwrap();
             }
@@ -322,7 +323,7 @@ mod test {
         data.extend(vec![0; 20]);
         assert_parsed(data, Message::Response(Response::KeyNotFound)).await;
 
-        data = vec![132];
+        data = vec![255];
         data.extend(vec![0, 0, 0, 0, 0, 0, 0, 3]); // vlen
         data.extend(vec![0; 12]); // rest of header
         data.extend(vec![101, 114, 114]); // msg

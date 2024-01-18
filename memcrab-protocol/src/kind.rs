@@ -14,5 +14,6 @@ pub enum MessageKind {
     OkResponse = 129,
     ValueResponse = 130,
     KeyNotFoundResponse = 131,
-    ErrorResponse = 132,
+
+    ErrorResponse = 255,
 }
