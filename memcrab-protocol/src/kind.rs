@@ -16,10 +16,3 @@ pub enum MessageKind {
     KeyNotFoundResponse = 131,
     ErrorResponse = 132,
 }
-
-impl MessageKind {
-    pub fn is_response(&self) -> bool {
-        let flag: u8 = (*self).into();
-        flag >= 128
-    }
-}
