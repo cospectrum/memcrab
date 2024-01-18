@@ -261,7 +261,7 @@ mod test {
         assert_eq!(21, sizes::MAX_HEADER_SIZE);
 
         // TODO: divide test cases to functions so it does not stop at first fail + reduce
-        // boilerplate somehow)
+        // boilerplate somehow
         // TODO!: tests for encoding
 
         data = vec![0];
