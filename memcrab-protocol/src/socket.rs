@@ -19,7 +19,7 @@ where
         }
     }
     /// Wait for a complete message from socket and parse it.
-    pub async fn receive(&mut self) -> Result<Msg, Error> {
+    pub async fn recv(&mut self) -> Result<Msg, Error> {
         let mut header = [0; HEADER_SIZE];
         self.stream.read_exact(&mut header).await?;
         let (kind, payload_len) = self.parser.decode_header(&header)?;
@@ -91,7 +91,7 @@ mod test {
             wrote_data: vec![],
         });
         socket.stream.read_data = data.into();
-        let parsed = socket.receive().await;
+        let parsed = socket.recv().await;
         assert_eq!(parsed.expect("error while parsing"), msg);
     }
     #[tokio::test]
