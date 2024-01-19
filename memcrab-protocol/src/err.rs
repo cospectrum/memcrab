@@ -1,3 +1,5 @@
+use std::{array::TryFromSliceError, string::FromUtf8Error};
+
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -12,11 +14,14 @@ pub enum Error {
 #[derive(Error, Debug)]
 pub enum ParseError {
     #[error("invalid message kind")]
-    UnknownKind,
+    UnknownMsgKind,
 
     #[error("malformed string")]
-    InvalidString,
+    InvalidString(#[from] FromUtf8Error),
 
     #[error("message is too big")]
     TooBig,
+
+    #[error("conversion from a slice to an array fails")]
+    TryFromSlice(#[from] TryFromSliceError),
 }

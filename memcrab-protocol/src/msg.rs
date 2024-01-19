@@ -1,7 +1,7 @@
 use crate::alias::{Expiration, Version};
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Message {
+pub enum Msg {
     Request(Request),
     Response(Response),
 }
