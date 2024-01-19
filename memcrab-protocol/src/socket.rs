@@ -46,7 +46,10 @@ mod test {
     use itertools::chain;
 
     use super::*;
-    use crate::{kind::MsgKind, Request, Response};
+    use crate::{
+        kind::{MsgKind, RequestKind, ResponseKind},
+        Request, Response,
+    };
     use std::collections::VecDeque;
 
     struct MockStream {
@@ -99,21 +102,21 @@ mod test {
         // boilerplate somehow
         // TODO!: tests for encoding
 
-        let mut data = vec![MsgKind::VersionRequest.into()];
+        let mut data = vec![MsgKind::Request(RequestKind::Version).into()];
         data.extend(2u64.to_be_bytes());
         data.extend([0, 1]);
         assert_parsed(data, Msg::Request(Request::Version(1))).await;
 
-        let mut data = vec![MsgKind::PingRequest.into()];
+        let mut data = vec![MsgKind::Request(RequestKind::Ping).into()];
         data.extend(zero_u64_bytes);
         assert_parsed(data, Msg::Request(Request::Ping)).await;
 
-        let mut data = vec![MsgKind::GetRequest.into()];
+        let mut data = vec![MsgKind::Request(RequestKind::Get).into()];
         data.extend(2u64.to_be_bytes()); // rest of header
         data.extend([97, 98]); // utf8 encoded key
         assert_parsed(data, Msg::Request(Request::Get("ab".to_owned()))).await;
 
-        let mut data = vec![MsgKind::SetRequest.into()];
+        let mut data = vec![MsgKind::Request(RequestKind::Set).into()];
         let klen = [0, 0, 0, 0, 0, 0, 0, 2];
         let exp = [0, 0, 1, 0];
         let key = [97, 98]; // utf8 encoded key
@@ -132,33 +135,33 @@ mod test {
         )
         .await;
 
-        let mut data = vec![MsgKind::DeleteRequest.into()];
+        let mut data = vec![MsgKind::Request(RequestKind::Delete).into()];
         data.extend(2u64.to_be_bytes()); // rest of header
         data.extend(vec![97, 98]); // utf8 encoded key
         assert_parsed(data, Msg::Request(Request::Delete("ab".to_owned()))).await;
 
-        let mut data = vec![MsgKind::ClearRequest.into()];
+        let mut data = vec![MsgKind::Request(RequestKind::Clear).into()];
         data.extend(zero_u64_bytes);
         assert_parsed(data, Msg::Request(Request::Clear)).await;
 
-        let mut data = vec![MsgKind::PongResponse.into()];
+        let mut data = vec![MsgKind::Response(ResponseKind::Pong).into()];
         data.extend(zero_u64_bytes);
         assert_parsed(data, Msg::Response(Response::Pong)).await;
 
-        let mut data = vec![MsgKind::OkResponse.into()];
+        let mut data = vec![MsgKind::Response(ResponseKind::Ok).into()];
         data.extend(zero_u64_bytes);
         assert_parsed(data, Msg::Response(Response::Ok)).await;
 
-        let mut data = vec![MsgKind::ValueResponse.into()];
+        let mut data = vec![MsgKind::Response(ResponseKind::Value).into()];
         data.extend(4u64.to_be_bytes());
         data.extend(vec![1, 2, 3, 4]); // msg
         assert_parsed(data, Msg::Response(Response::Value(vec![1, 2, 3, 4]))).await;
 
-        data = vec![MsgKind::KeyNotFoundResponse.into()];
+        let mut data = vec![MsgKind::Response(ResponseKind::KeyNotFound).into()];
         data.extend(zero_u64_bytes);
         assert_parsed(data, Msg::Response(Response::KeyNotFound)).await;
 
-        data = vec![MsgKind::ErrorResponse.into()];
+        let mut data = vec![MsgKind::Response(ResponseKind::Error).into()];
         data.extend(3u64.to_be_bytes()); // payload len
         data.extend(vec![101, 114, 114]); // msg
         assert_parsed(data, Msg::Response(Response::Error("err".to_owned()))).await;
