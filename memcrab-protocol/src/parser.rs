@@ -1,5 +1,5 @@
 use crate::{
-    alias::{Expiration, KeyLen, PayloadLen, Version},
+    alias::{Expiration, KeyLen, PayloadLen},
     kind::{MsgKind, RequestKind, ResponseKind},
     Msg, ParseError, Request, Response, HEADER_SIZE,
 };
@@ -32,10 +32,6 @@ impl Parser {
     fn decode_request(&self, kind: RequestKind, payload: Payload) -> Result<Request, ParseError> {
         use RequestKind as Kind;
         Ok(match kind {
-            Kind::Version => {
-                let version = Version::from_be_bytes(payload.as_slice().try_into()?);
-                Request::Version(version)
-            }
             Kind::Ping => Request::Ping,
             Kind::Get => Request::Get(utf8(payload)?),
             Kind::Set => {
@@ -92,7 +88,6 @@ impl Parser {
 
     fn encode_request(&self, req: Request) -> (RequestKind, Payload) {
         match req {
-            Request::Version(version) => (RequestKind::Version, version.to_be_bytes().to_vec()),
             Request::Ping => (RequestKind::Ping, vec![]),
             Request::Clear => (RequestKind::Clear, vec![]),
             Request::Get(key) => (RequestKind::Get, key.into()),

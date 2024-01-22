@@ -33,12 +33,11 @@ impl TryFrom<u8> for MsgKind {
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, TryFromPrimitive, IntoPrimitive, PartialEq, Eq)]
 pub enum RequestKind {
-    Version = 0,
-    Ping = 1,
-    Get = 2,
-    Set = 3,
-    Delete = 4,
-    Clear = 5,
+    Ping = 0,
+    Get = 1,
+    Set = 2,
+    Delete = 3,
+    Clear = 4,
 }
 
 #[repr(u8)]

@@ -1,4 +1,4 @@
-use crate::alias::{Expiration, Version};
+use crate::alias::Expiration;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Msg {
@@ -8,7 +8,6 @@ pub enum Msg {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Request {
-    Version(Version),
     Get(String),
     Set {
         key: String,

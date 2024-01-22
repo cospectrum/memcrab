@@ -1,4 +1,4 @@
-use super::{builder::DefaultBuilder, ByteSized};
+use super::ByteSized;
 use core::{borrow::Borrow, hash::Hash};
 use lru::LruCache;
 
@@ -26,12 +26,20 @@ where
     K: ByteSized + Hash + Eq,
     V: ByteSized,
 {
-    pub fn builder() -> DefaultBuilder<K, V> {
-        DefaultBuilder::new()
+    pub fn with_max_bytesize(max_bytesize: usize) -> Self {
+        let inner = LruCache::unbounded();
+        Self::new(inner, max_bytesize)
     }
-    pub(crate) fn new(lru: LruCache<K, V>, max_bytesize: usize) -> Self {
+    pub fn with_max_bytesize_and_max_len(max_bytesize: usize, max_len: usize) -> Self {
+        use core::num::NonZeroUsize;
+        assert!(max_len > 0, "max_len should be > 0");
+        let max_len = NonZeroUsize::new(max_len).unwrap();
+        let inner = LruCache::new(max_len);
+        Self::new(inner, max_bytesize)
+    }
+    pub(crate) fn new(inner: LruCache<K, V>, max_bytesize: usize) -> Self {
         Self {
-            inner: lru,
+            inner,
             max_bytesize,
             bytesize: 0,
         }
@@ -39,12 +47,15 @@ where
     pub fn max_bytesize(&self) -> usize {
         self.max_bytesize
     }
+    #[allow(unused)]
     pub fn max_len(&self) -> usize {
         self.inner.cap().into()
     }
+    #[allow(unused)]
     pub fn len(&self) -> usize {
         self.inner.len()
     }
+    #[allow(unused)]
     pub fn is_empty(&self) -> bool {
         self.inner.is_empty()
     }
@@ -72,6 +83,17 @@ where
         assert!(self.bytesize() <= self.max_bytesize());
         result
     }
+    pub fn remove<Q>(&mut self, key: &Q) -> Option<V>
+    where
+        K: Borrow<Q>,
+        Q: Hash + Eq + ?Sized,
+    {
+        self.pop(key)
+    }
+    pub fn clear(&mut self) {
+        self.inner.clear();
+        self.bytesize = 0;
+    }
 
     fn make_room_for(&mut self, item_size: usize) {
         assert!(item_size <= self.max_bytesize());
@@ -79,7 +101,6 @@ where
             self.pop_lru();
         }
     }
-
     fn pop<Q>(&mut self, key: &Q) -> Option<V>
     where
         K: Borrow<Q>,

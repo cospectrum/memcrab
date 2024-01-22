@@ -41,7 +41,6 @@ Clients should only send request messages and understand responses messages howe
 ```rs
 type PayloadLen = u64;  // number of bytes in payload
 
-type Version = u16;     // protocol-version
 type KeyLen = u64;      // number of bytes in the encoded utf8 string key
 type Expirtaion = u32;  // expiration in seconds
 
@@ -54,12 +53,11 @@ type Key = String;      // utf-8
 #### Requests (first byte < 128)
 | Message kind     | first byte | remaining 8 bytes in header | payload
 | ---              | ---        | ---                         | --- 
-|    Version       | 0          | PayloadLen                  | Version
-|    Ping          | 1          | zeros                       | none
-|    Get           | 2          | PayloadLen                  | Key
-|    Set           | 3          | PayloadLen                  | KeyLen, Expirtaion, Key, Value
-|    Delete        | 4          | PayloadLen                  | Key
-|    Clear         | 5          | zeros                       | none
+|    Ping          | 0          | zeros                       | none
+|    Get           | 1          | PayloadLen                  | Key
+|    Set           | 2          | PayloadLen                  | KeyLen, Expirtaion, Key, Value
+|    Delete        | 3          | PayloadLen                  | Key
+|    Clear         | 4          | zeros                       | none
 
 #### Responses (first byte >= 128)
 | Message kind    | first byte | remaining 8 bytes in header | payload
@@ -70,10 +68,3 @@ type Key = String;      // utf-8
 |    KeyNotFound  | 131        | zeros                       | none
 |    Error        | 255        | PayloadLen                  | String (utf-8 encoded)
 
-### Versioning
-Protocol is versioned by a number and are not backwards compatible.
-
-The current version is `0`.
-
-The clients must send `Version` message as their first message.
-The server must close the connection if the version is not compatible.
