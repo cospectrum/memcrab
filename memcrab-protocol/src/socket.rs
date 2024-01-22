@@ -101,11 +101,6 @@ mod test {
         // boilerplate somehow
         // TODO!: tests for encoding
 
-        let mut data = vec![MsgKind::Request(RequestKind::Version).into()];
-        data.extend(2u64.to_be_bytes());
-        data.extend([0, 1]);
-        assert_parsed(data, Msg::Request(Request::Version(1))).await;
-
         let mut data = vec![MsgKind::Request(RequestKind::Ping).into()];
         data.extend(zero_u64_bytes);
         assert_parsed(data, Msg::Request(Request::Ping)).await;

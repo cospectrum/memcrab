@@ -3,7 +3,7 @@ resolver = "2"
 
 members = [
     "memcrab",
-    "memcrab-cache",
+    "memcrab-server",
     "memcrab-protocol",
     "memcrab-cli",
 ]

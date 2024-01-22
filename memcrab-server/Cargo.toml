@@ -1,0 +1,13 @@
+[package]
+name = "memcrab-server"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tokio = { workspace = true, features = ["full"] }
+memcrab-protocol = { version = "0.1.0", path = "../memcrab-protocol" }
+lru = "0.12.1"
+thiserror.workspace = true
+typed-builder = "0.18.1"
