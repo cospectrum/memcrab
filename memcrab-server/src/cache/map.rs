@@ -75,10 +75,7 @@ where
         idx as usize
     }
     fn hash<T: Hash>(&self, item: &T) -> u64 {
-        use core::hash::{BuildHasher, Hasher};
-
-        let mut hasher = self.hasher.build_hasher();
-        item.hash(&mut hasher);
-        hasher.finish()
+        use core::hash::BuildHasher;
+        self.hasher.hash_one(item)
     }
 }
