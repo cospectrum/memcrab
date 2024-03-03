@@ -1,76 +1,64 @@
-use memcrab_protocol::{Request, Response, Socket};
-use std::{net::SocketAddr, num::NonZeroU32, sync::Arc};
-use tokio::net::{TcpListener, TcpStream};
+use memcrab_protocol::{AsyncRead, AsyncWrite, Request, Response};
+use std::{io, num::NonZeroU32, sync::Arc};
 
-use crate::{Cache, CacheCfg};
+use super::{listener::AcceptConnection, socket::ServerSocket};
+use crate::cache::Cache;
 
-use super::socket::ServerSocket;
-
-pub struct Server {
+pub(super) async fn start_server<S>(
+    listener: impl AcceptConnection<Stream = S>,
     cache: Cache,
-}
-
-impl From<CacheCfg> for Server {
-    fn from(cfg: CacheCfg) -> Self {
-        Self::new(Cache::from(cfg))
-    }
-}
-
-async fn start_server(server: Server, addr: SocketAddr) -> Result<(), std::io::Error> {
-    let listener = TcpListener::bind(addr).await?;
-    let server = Arc::new(server);
+) -> io::Result<()>
+where
+    S: AsyncRead + AsyncWrite + Unpin + Send + 'static,
+{
+    let cache = Arc::new(cache);
     loop {
-        let server = server.clone();
-        let (socket, client_addr) = listener.accept().await?;
-        tokio::spawn(async move { server.handle(socket, client_addr).await });
+        let stream = listener.accept_connection().await?;
+        let socket = ServerSocket::from_stream(stream);
+        let cache = cache.clone();
+        tokio::spawn(async move { handle(socket, cache).await });
     }
 }
 
-// TODO: logging
-impl Server {
-    fn new(cache: Cache) -> Self {
-        Self { cache }
+async fn handle<S>(mut socket: ServerSocket<S>, cache: Arc<Cache>)
+where
+    S: AsyncRead + AsyncWrite + Unpin,
+{
+    let cache = cache.as_ref();
+    loop {
+        let request = socket.recv().await.unwrap();
+        let response = response_to(request, cache);
+        socket.send(response).await.unwrap();
     }
-    pub async fn start(self, addr: SocketAddr) -> Result<(), std::io::Error> {
-        start_server(self, addr).await
-    }
-    // TODO: error handling
-    async fn handle(&self, stream: TcpStream, _: SocketAddr) {
-        let mut socket: ServerSocket<_> = Socket::new(stream).into();
-        loop {
-            let request = socket.recv().await.unwrap();
-            let response = self.response_to(request);
-            socket.send(response).await.unwrap();
+}
+
+fn response_to(request: Request, cache: &Cache) -> Response {
+    match request {
+        Request::Ping => Response::Pong,
+        Request::Get(ref key) => match cache.get(key) {
+            Some(val) => Response::Value(val),
+            None => Response::KeyNotFound,
+        },
+        Request::Delete(ref key) => match cache.remove(key) {
+            Some(_) => Response::Ok,
+            None => Response::KeyNotFound,
+        },
+        Request::Set {
+            key,
+            value,
+            expiration,
+        } => {
+            if expiration == 0 {
+                cache.set(key, value)
+            } else {
+                let exp = NonZeroU32::new(expiration).unwrap();
+                cache.set_with_expiration(key, value, exp);
+            }
+            Response::Ok
         }
-    }
-    fn response_to(&self, request: Request) -> Response {
-        match request {
-            Request::Ping => Response::Pong,
-            Request::Get(ref key) => match self.cache.get(key) {
-                Some(val) => Response::Value(val),
-                None => Response::KeyNotFound,
-            },
-            Request::Delete(ref key) => match self.cache.remove(key) {
-                Some(_) => Response::Ok,
-                None => Response::KeyNotFound,
-            },
-            Request::Set {
-                key,
-                value,
-                expiration,
-            } => {
-                if expiration == 0 {
-                    self.cache.set(key, value)
-                } else {
-                    let exp = NonZeroU32::new(expiration).unwrap();
-                    self.cache.set_with_expiration(key, value, exp);
-                }
-                Response::Ok
-            }
-            Request::Clear => {
-                self.cache.clear();
-                Response::Ok
-            }
+        Request::Clear => {
+            cache.clear();
+            Response::Ok
         }
     }
 }

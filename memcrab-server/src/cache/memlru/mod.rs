@@ -1,4 +1,7 @@
-use super::ByteSized;
+mod bytesized;
+
+pub use bytesized::ByteSized;
+
 use core::{borrow::Borrow, hash::Hash};
 use lru::LruCache;
 

@@ -9,8 +9,7 @@ Instead, you can use the official memcrab client.**
 ## Usage 
 ```rust
 // TODO
-
-use memcrab_protocol::{Socket, Msg, Request, Response};
+use memcrab_protocol::{Socket, Msg, Request, Response, AsyncRead, AsyncWrite};
 
 #[tokio::main]
 async fn main() {

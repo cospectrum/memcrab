@@ -1,20 +1,29 @@
 use super::ServerSideError;
-use memcrab_protocol::{AsyncReader, AsyncWriter, Msg, Request, Response, Socket};
+use memcrab_protocol::{AsyncRead, AsyncWrite, Msg, Request, Response, Socket};
 
 #[derive(Debug, Clone)]
 pub struct ServerSocket<S> {
     inner: Socket<S>,
 }
 
+impl<S> ServerSocket<S> {
+    pub fn new(inner: Socket<S>) -> Self {
+        Self { inner }
+    }
+    pub fn from_stream(stream: S) -> Self {
+        Socket::new(stream).into()
+    }
+}
+
 impl<S> From<Socket<S>> for ServerSocket<S> {
     fn from(inner: Socket<S>) -> Self {
-        Self { inner }
+        Self::new(inner)
     }
 }
 
 impl<S> ServerSocket<S>
 where
-    S: AsyncReader + AsyncWriter + Send,
+    S: AsyncRead + AsyncWrite + Unpin,
 {
     pub async fn recv(&mut self) -> Result<Request, ServerSideError> {
         let msg = self.inner.recv().await?;
