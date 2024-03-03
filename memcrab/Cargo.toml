@@ -11,8 +11,11 @@ license = "MIT OR Apache-2.0"
 readme = "../README.md"
 repository = "https://github.com/cospectrum/memcrab"
 
+[dependencies]
+async-trait = "0.1.77"
+memcrab-protocol = { version = "0.1.0", path = "../memcrab-protocol" }
+tokio = { workspace = true, features = ["net"] }
+
 [dev-dependencies]
 anyhow.workspace = true
-
-[dependencies]
-memcrab-protocol = { version = "0.1.0", path = "../memcrab-protocol" }
+tokio = { workspace = true, features = ["full"] }

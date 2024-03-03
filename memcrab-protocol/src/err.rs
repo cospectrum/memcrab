@@ -1,5 +1,5 @@
+use crate::Msg;
 use std::{array::TryFromSliceError, string::FromUtf8Error};
-
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -9,6 +9,9 @@ pub enum Error {
 
     #[error("cannot parse message")]
     Parse(#[from] ParseError),
+
+    #[error("invalid msg")]
+    InvalidMsg(Msg),
 }
 
 #[derive(Error, Debug)]
