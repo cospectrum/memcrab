@@ -1,10 +1,16 @@
 /*!
 # memcrab
 
+`memcrab` client.
+
 ## Usage
 
+### RawClient
+
+#### Tcp
+
 ```no_run
-use memcrab::{RawClient, connections::Tcp, Rpc as _, Error};
+use memcrab::{RawClient, connections::Tcp, Error};
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {

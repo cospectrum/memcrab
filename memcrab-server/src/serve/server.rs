@@ -1,8 +1,10 @@
-use memcrab_protocol::{AsyncRead, AsyncWrite, Request, Response};
+use core::panic;
+use memcrab_protocol::{AsyncRead, AsyncWrite, Error as ProtocolError, Request, Response};
 use std::{io, num::NonZeroU32, sync::Arc};
+use tracing::info;
 
 use super::{listener::AcceptConnection, socket::ServerSocket};
-use crate::cache::Cache;
+use crate::{cache::Cache, serve::err::ServerSideError};
 
 pub(super) async fn start_server<S>(
     listener: impl AcceptConnection<Stream = S>,
@@ -11,6 +13,7 @@ pub(super) async fn start_server<S>(
 where
     S: AsyncRead + AsyncWrite + Unpin + Send + 'static,
 {
+    info!("memcrab server started...");
     let cache = Arc::new(cache);
     loop {
         let stream = listener.accept_connection().await?;
@@ -26,8 +29,20 @@ where
 {
     let cache = cache.as_ref();
     loop {
-        let request = socket.recv().await.unwrap();
+        let request = match socket.recv().await {
+            Ok(req) => req,
+            Err(ServerSideError::Protocol(ProtocolError::IO(err))) => match err.kind() {
+                io::ErrorKind::UnexpectedEof => {
+                    info!("eof, close connection");
+                    return;
+                }
+                _ => panic!("{:?}", err),
+            },
+            err => panic!("{:?}", err),
+        };
+        info!("received request: {:?}", &request);
         let response = response_to(request, cache);
+        info!("sending response: {:?}", &response);
         socket.send(response).await.unwrap();
     }
 }
