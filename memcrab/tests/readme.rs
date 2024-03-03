@@ -1,17 +1,7 @@
-# memcrab
+use memcrab::{connections::Tcp, Error, RawClient};
 
-`memcrab` client.
-
-## Usage
-
-### RawClient
-
-#### Tcp
-```rust
-use memcrab::{RawClient, connections::Tcp, Error};
-
-#[tokio::main]
-async fn main() -> Result<(), Error> {
+#[allow(dead_code)]
+async fn tcp_raw_client_readme() -> Result<(), Error> {
     let addr = "127.0.0.1:80".parse().unwrap();
     let mut client = RawClient::<Tcp>::connect(addr).await?;
 
@@ -23,4 +13,3 @@ async fn main() -> Result<(), Error> {
     }
     Ok(())
 }
-```

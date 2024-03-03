@@ -42,7 +42,7 @@ where
         let (kind, payload_len) = self.parser.decode_header(&header)?;
 
         let payload = if payload_len > 0 {
-            read_chunk(&mut self.stream, payload_len as usize).await?
+            read_chunk_exact(&mut self.stream, payload_len as usize).await?
         } else {
             vec![]
         };
@@ -51,7 +51,7 @@ where
     }
 }
 
-async fn read_chunk<S: AsyncRead + Unpin>(
+async fn read_chunk_exact<S: AsyncRead + Unpin>(
     stream: &mut S,
     size: usize,
 ) -> Result<Vec<u8>, io::Error> {
