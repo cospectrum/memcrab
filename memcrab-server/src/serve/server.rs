@@ -13,7 +13,7 @@ pub(super) async fn start_server<S>(
 where
     S: AsyncRead + AsyncWrite + Unpin + Send + 'static,
 {
-    info!("started memcrab server...");
+    info!("memcrab server started...");
     let cache = Arc::new(cache);
     loop {
         let stream = listener.accept_connection().await?;
