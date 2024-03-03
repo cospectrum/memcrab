@@ -1,4 +1,6 @@
-use crate::{err::Error, AsyncReader, AsyncWriter, Msg, Parser, HEADER_SIZE};
+use crate::{err::Error, Msg, Parser, HEADER_SIZE};
+use std::io;
+use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
 /// Wraps a stream (typically TCPStream) for receiving/sending framed messages according to memcrab
 /// protocol. It is used for both client and server implementations.
@@ -8,16 +10,31 @@ pub struct Socket<S> {
     parser: Parser,
 }
 
-impl<S> Socket<S>
-where
-    S: AsyncReader + AsyncWriter + Send,
-{
+impl<S> Socket<S> {
     pub fn new(stream: S) -> Self {
         Self {
             stream,
             parser: Parser,
         }
     }
+}
+
+impl<S> Socket<S>
+where
+    S: AsyncWrite + Unpin,
+{
+    /// Encode a message and write it to the socket.
+    pub async fn send(&mut self, msg: Msg) -> Result<(), Error> {
+        let bytes = self.parser.encode(msg);
+        self.stream.write_all(&bytes).await?;
+        Ok(())
+    }
+}
+
+impl<S> Socket<S>
+where
+    S: AsyncRead + Unpin,
+{
     /// Wait for a complete message from socket and parse it.
     pub async fn recv(&mut self) -> Result<Msg, Error> {
         let mut header = [0; HEADER_SIZE];
@@ -25,19 +42,23 @@ where
         let (kind, payload_len) = self.parser.decode_header(&header)?;
 
         let payload = if payload_len > 0 {
-            self.stream.read_chunk(payload_len as usize).await?
+            read_chunk(&mut self.stream, payload_len as usize).await?
         } else {
             vec![]
         };
         let msg = self.parser.decode(kind, payload)?;
         Ok(msg)
     }
-    /// Encode a message and write it to the socket.
-    pub async fn send(&mut self, msg: Msg) -> Result<(), Error> {
-        let bytes = self.parser.encode(msg);
-        self.stream.write_all(&bytes).await?;
-        Ok(())
-    }
+}
+
+async fn read_chunk<S: AsyncRead + Unpin>(
+    stream: &mut S,
+    size: usize,
+) -> Result<Vec<u8>, io::Error> {
+    let mut buf = vec![0; size];
+    let n = stream.read_exact(&mut buf).await?;
+    assert_eq!(n, buf.len());
+    Ok(buf)
 }
 
 // test in submodule so we can access private stream
@@ -49,57 +70,19 @@ mod test {
         Request, Response,
     };
     use itertools::chain;
-    use std::collections::VecDeque;
-
-    struct MockStream {
-        read_data: VecDeque<u8>,
-        wrote_data: Vec<u8>,
-    }
-
-    #[async_trait::async_trait]
-    impl AsyncReader for MockStream {
-        async fn read_exact(&mut self, buf: &mut [u8]) -> Result<(), std::io::Error> {
-            use std::io::{Error, ErrorKind};
-
-            for (at, byte) in buf.iter_mut().enumerate() {
-                if self.read_data.is_empty() {
-                    let msg = format!(
-                        "read_exact: cannot completely fill buffer with len={}, stopped at {}",
-                        buf.len(),
-                        at,
-                    );
-                    return Err(Error::new(ErrorKind::UnexpectedEof, msg));
-                }
-                *byte = self.read_data.pop_front().unwrap();
-            }
-            Ok(())
-        }
-    }
-
-    #[async_trait::async_trait]
-    impl AsyncWriter for MockStream {
-        async fn write_all(&mut self, buf: &[u8]) -> Result<(), std::io::Error> {
-            self.wrote_data = Vec::from(buf);
-            Ok(())
-        }
-    }
+    use tokio_test::io::Builder;
 
     #[allow(unused)]
-    async fn assert_parsed(data: Vec<u8>, msg: Msg) {
-        let mut socket = Socket::new(MockStream {
-            read_data: vec![].into(),
-            wrote_data: vec![],
-        });
-        socket.stream.read_data = data.into();
-        let parsed = socket.recv().await;
-        assert_eq!(parsed.expect("error while parsing"), msg);
+    async fn assert_parsed(data: impl AsRef<[u8]>, msg: Msg) {
+        let mock = Builder::new().read(data.as_ref()).build();
+        let mut socket = Socket::new(mock);
+        let parsed = socket.recv().await.unwrap();
+        assert_eq!(parsed, msg);
     }
+
     #[tokio::test]
     async fn test_socket() {
         let zero_u64_bytes = &0u64.to_be_bytes();
-        // TODO: divide test cases to functions so it does not stop at first fail + reduce
-        // boilerplate somehow
-        // TODO!: tests for encoding
 
         let mut data = vec![MsgKind::Request(RequestKind::Ping).into()];
         data.extend(zero_u64_bytes);
@@ -119,6 +102,7 @@ mod test {
         let payload_len = (payload.len() as u64).to_be_bytes();
         data.extend(payload_len);
         data.extend(payload);
+
         assert_parsed(
             data,
             Msg::Request(Request::Set {

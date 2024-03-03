@@ -9,7 +9,7 @@ args = ["build"]
 command = "cargo"
 args = ["check"]
 
-[tasks.fmt]
+[tasks.fmt-check]
 command = "cargo"
 args = ["fmt", "--check"]
 
@@ -31,7 +31,7 @@ args = ["test"]
 dependencies = [
     "check",
     "build",
-    "fmt",
+    "fmt-check",
     "clippy",
     "doc",
 ]

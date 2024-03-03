@@ -1,19 +1,17 @@
 mod alias;
 mod err;
-mod io;
 mod kind;
 mod msg;
 mod parser;
 mod socket;
 
+use parser::Parser;
 use std::mem::size_of;
 
-use parser::Parser;
-
 pub use err::{Error, ParseError};
-pub use io::{AsyncReader, AsyncWriter};
 pub use msg::{Msg, Request, Response};
 pub use socket::Socket;
+pub use tokio::io::{AsyncRead, AsyncWrite};
 
 const HEADER_SIZE: usize = size_of::<u8>() + size_of::<u64>();
 

@@ -1,5 +1,6 @@
-use super::ByteSized;
 use std::{num::NonZeroU32, time::Instant};
+
+use super::ByteSized;
 
 #[derive(Clone, Debug)]
 struct Clock {

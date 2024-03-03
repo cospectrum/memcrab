@@ -1,18 +1,19 @@
 # memcrab-server
 
 ```rs
-use memcrab_server::{Server, CacheCfg};
+use memcrab_server::{serve, Cache};
+use tokio::net::TcpListener;
 
 #[tokio::main]
 async fn main() {
     let gb = 2_usize.pow(30);
-    let cfg = CacheCfg::builder()
+    let cache = Cache::builder()
         .segments(10)
         .max_bytesize(gb)
-        .build();
+        .build()
+        .into();
 
-    let addr = "127.0.0.1:9900".parse().unwrap();
-    let server = Server::from(cfg);
-    server.start(addr).await.unwrap();
+    let listener = TcpListener::bind("127.0.0.1:9900").await.unwrap();
+    serve(listener, cache).await.unwrap();
 }
 ```

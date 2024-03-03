@@ -4,19 +4,20 @@
 ## Usage
 
 ```no_run
-use memcrab_server::{Server, CacheCfg};
+use memcrab_server::{serve, Cache};
+use tokio::net::TcpListener;
 
 #[tokio::main]
 async fn main() {
     let gb = 2_usize.pow(30);
-    let cfg = CacheCfg::builder()
+    let cache = Cache::builder()
         .segments(10)
         .max_bytesize(gb)
-        .build();
+        .build()
+        .into();
 
-    let addr = "127.0.0.1:9900".parse().unwrap();
-    let server = Server::from(cfg);
-    server.start(addr).await.unwrap();
+    let listener = TcpListener::bind("127.0.0.1:9900").await.unwrap();
+    serve(listener, cache).await.unwrap();
 }
 ```
 */
@@ -24,30 +25,32 @@ async fn main() {
 mod cache;
 mod serve;
 
-use cache::Cache;
-
-pub use cache::CacheCfg;
-pub use serve::Server;
+pub use cache::Cache;
+pub use serve::{serve, AcceptConnection};
 
 #[cfg(test)]
 mod tests {
     use std::time::Duration;
 
     use memcrab_protocol::{Msg, Request, Response, Socket};
-    use tokio::net::TcpStream;
+    use tokio::net::{TcpListener, TcpStream};
 
     use super::*;
 
     #[tokio::test]
     async fn test_init() {
         let gb = 2_usize.pow(30);
-        let cfg = CacheCfg::builder().segments(10).max_bytesize(gb).build();
+        let cache = Cache::builder()
+            .segments(10)
+            .max_bytesize(gb)
+            .build()
+            .into();
 
-        let addr = "127.0.0.1:9900".parse().unwrap();
+        let addr = "127.0.0.1:9900";
+        let listener = TcpListener::bind(addr).await.unwrap();
 
-        let server = Server::from(cfg);
         tokio::spawn(async move {
-            server.start(addr).await.unwrap();
+            serve(listener, cache).await.unwrap();
         });
         tokio::time::sleep(Duration::from_secs_f32(0.5)).await;
 
@@ -69,10 +72,11 @@ mod tests {
         let msg = socket.recv().await.unwrap();
         assert_eq!(msg, Msg::Response(Response::KeyNotFound));
 
+        let value = vec![3, 4];
         socket
             .send(Msg::Request(Request::Set {
                 key: key.clone(),
-                value: vec![3, 4],
+                value: value.clone(),
                 expiration: 0,
             }))
             .await
@@ -85,6 +89,6 @@ mod tests {
             .await
             .unwrap();
         let msg = socket.recv().await.unwrap();
-        assert_eq!(msg, Msg::Response(Response::Value(vec![3, 4])));
+        assert_eq!(msg, Msg::Response(Response::Value(value.clone())));
     }
 }

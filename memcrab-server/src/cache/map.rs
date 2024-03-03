@@ -1,4 +1,4 @@
-use super::{ByteSized, MemLru};
+use super::memlru::{ByteSized, MemLru};
 use core::{borrow::Borrow, hash::Hash};
 use std::{
     collections::hash_map::RandomState,
