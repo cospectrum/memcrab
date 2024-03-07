@@ -1,24 +1,23 @@
 # memcrab-cli
 
-Command line interface for memcrab
+Command line interface for memcrab.
 
 # Usage
 
-Start a server
+## Server 
+Start a server on TCP address `127.0.0.1:4949`
 ```bash
-cargo run -- -H 127.0.0.1 -p 6969 -s &
+memcrab-cli server -a 127.0.0.1:4949 &
 ```
 
-Connect client to a running server
+## Client 
+Execute one and exit
 ```bash
-cargo run -- -H 127.0.0.1 -p 6969
+memcrab-cli client -a 127.0.0.1:4949 set key value
 ```
 
-This will start an interactive session. You can use `get` and `set` commands.
+Start interactive REPL. Press Ctrl-d to exit.
+```bash
+memcrab-cli client -a 127.0.0.1:4949 
+```
 
-```
-memcrab> set x 1 2 3 
-memcrab> get x
-x: [1, 2, 3]
-memcrab> 
-```
