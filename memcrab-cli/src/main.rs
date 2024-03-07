@@ -123,7 +123,7 @@ async fn repl<C: memcrab::Rpc>(mut client: RawClient<C>) -> anyhow::Result<()> {
         match readline {
             Ok(line) => match eval_line(&mut client, line).await {
                 Ok(message) => println!("{}", message),
-                Err(err) => println!("{}", err),
+                Err(err) => println!("error: {}", err),
             },
             Err(rustyline::error::ReadlineError::Eof) => {
                 println!("quit");
