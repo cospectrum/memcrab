@@ -81,7 +81,7 @@ async fn eval_line<C: memcrab::Rpc>(
     line: String,
 ) -> anyhow::Result<String> {
     let tokens = tokenize_line(line)?;
-    match tokens.get(0).map(|s| s.as_ref()) {
+    match tokens.first().map(|s| s.as_ref()) {
         Some("get") if tokens.len() == 2 => {
             let value = client.get(&tokens[1]).await?;
             match value {
