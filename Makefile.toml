@@ -1,6 +1,11 @@
 [env]
 CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true
 
+[tasks.msrv]
+install_crate = "cargo-msrv"
+command = "cargo"
+args = ["msrv"]
+
 [tasks.build]
 command = "cargo"
 args = ["build"]
