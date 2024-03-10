@@ -1,5 +1,7 @@
 use std::io;
-use tokio::net::{TcpListener, TcpStream, UnixListener, UnixStream};
+use tokio::net::{TcpListener, TcpStream};
+#[cfg(target_family = "unix")]
+use tokio::net::{UnixListener, UnixStream};
 use tracing::info;
 
 #[async_trait::async_trait]
@@ -20,6 +22,7 @@ impl AcceptConnection for TcpListener {
     }
 }
 
+#[cfg(target_family = "unix")]
 #[async_trait::async_trait]
 impl AcceptConnection for UnixListener {
     type Stream = UnixStream;
