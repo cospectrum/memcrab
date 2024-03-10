@@ -6,6 +6,11 @@ install_crate = "cargo-msrv"
 command = "cargo"
 args = ["msrv"]
 
+[tasks.minlock]
+toolchain = "nightly"
+command = "cargo"
+args = ["update", "-Zminimal-versions"]
+
 [tasks.build]
 command = "cargo"
 args = ["build"]
