@@ -1,6 +1,16 @@
 [env]
 CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true
 
+[tasks.msrv]
+install_crate = "cargo-msrv"
+command = "cargo"
+args = ["msrv"]
+
+[tasks.minlock]
+toolchain = "nightly"
+command = "cargo"
+args = ["update", "-Zminimal-versions"]
+
 [tasks.build]
 command = "cargo"
 args = ["build"]
@@ -23,9 +33,13 @@ args = ["doc", "--no-deps", "--all-features"]
 command = "cargo"
 args = ["clippy", "--all-targets", "--all-features", "--", "-Dwarnings"]
 
+[tasks.doctest]
+command = "cargo"
+args = ["test", "--all-features", "--doc"]
+
 [tasks.tests]
 command = "cargo"
-args = ["test"]
+args = ["test", "doctest"]
 
 [tasks.pre-commit]
 dependencies = [

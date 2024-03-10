@@ -1,11 +1,6 @@
-use crate::{
-    connections::{Tcp, Unix},
-    Error,
-};
+use crate::{connections::*, Error};
 use memcrab_protocol::{Msg, Request, Response};
-
 use std::{net::SocketAddr, path::Path};
-use tokio::net::{TcpStream, UnixStream};
 
 #[async_trait::async_trait]
 pub trait Rpc
@@ -57,13 +52,18 @@ where
 
 impl RawClient<Tcp> {
     pub async fn connect(addr: SocketAddr) -> Result<Self, Error> {
+        use tokio::net::TcpStream;
+
         let stream = TcpStream::connect(addr).await?;
         Ok(Self::new(Tcp::from_stream(stream)))
     }
 }
 
+#[cfg(target_family = "unix")]
 impl RawClient<Unix> {
     pub async fn connect(path: impl AsRef<Path>) -> Result<Self, Error> {
+        use tokio::net::UnixStream;
+
         let stream = UnixStream::connect(path).await?;
         Ok(Self::new(Unix::from_stream(stream)))
     }
