@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 tokio = { workspace = true, features = ["full"] }
 memcrab-protocol = { version = "0.1.0", path = "../memcrab-protocol" }
-lru = { version = "0.12.1", default-features = false }
+lru = { version = "0.12.1" }
 thiserror.workspace = true
 typed-builder = "0.18.1"
 async-trait = "0.1.77"
