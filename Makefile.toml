@@ -9,7 +9,7 @@ args = ["msrv"]
 [tasks.minlock]
 toolchain = "nightly"
 command = "cargo"
-args = ["update", "-Zminimal-versions"]
+args = ["update", "-Zdirect-minimal-versions"]
 
 [tasks.build]
 command = "cargo"

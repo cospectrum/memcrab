@@ -2,15 +2,22 @@
 
 Command line interface for memcrab.
 
-# Usage
+## Install
 
-## Server 
+From the main branch:
+```sh
+cargo install --git https://github.com/cospectrum/memcrab memcrab-cli
+```
+
+## Usage
+
+### Server 
 Start a server on TCP address `127.0.0.1:4949`
 ```bash
 memcrab-cli server -a 127.0.0.1:4949 &
 ```
 
-## Client 
+### Client 
 Execute one and exit
 ```bash
 memcrab-cli client -a 127.0.0.1:4949 set key value
@@ -18,6 +25,5 @@ memcrab-cli client -a 127.0.0.1:4949 set key value
 
 Start interactive REPL. Press Ctrl-d to exit.
 ```bash
-memcrab-cli client -a 127.0.0.1:4949 
+memcrab-cli client -a 127.0.0.1:4949
 ```
-
