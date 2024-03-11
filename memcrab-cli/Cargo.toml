@@ -17,6 +17,3 @@ memcrab = { version = "0.1.0", path = "../memcrab" }
 memcrab-server = { version = "0.1.0", path = "../memcrab-server" }
 rustyline = "13.0.0"
 tokio = { version = "1.35.1", features = ["full"] }
-
-[target.'cfg(any())'.dependencies]
-log = { version = "0.4.5", optional = true } # needed to allow foo to build with -Zminimal-versions
